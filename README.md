@@ -219,11 +219,6 @@ Now restart ContainerD:
 sudo systemctl restart containerd
 ```
 
-
-## Kafka
-
-To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
-
 ## Test web service project in Rust/Hyper
 
 ### Setting up Rust
@@ -241,6 +236,257 @@ Then you need to get the Rust project from https://github.com/LumaRay/test-simpl
 cd ~/test-rust-hyper
 cargo build --release
 ```
+
+## Kafka
+
+To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
+
+```
+sudo useradd kafka -m
+
+sudo passwd kafka
+```
+
+I use simple password for test: 123
+
+```
+sudo adduser kafka sudo
+su -l kafka
+mkdir ~/Downloads
+curl "https://dlcdn.apache.org/kafka/3.2.0/kafka-3.2.0-src.tgz" -o ~/Downloads/kafka.tgz
+mkdir ~/kafka && cd ~/kafka
+tar -xvzf ~/Downloads/kafka.tgz --strip 1
+gedit ~/kafka/config/server.properties
+```
+Set:
+```
+delete.topic.enable = true
+```
+
+```
+./gradlew jar -PscalaVersion=2.13.6
+sudo gedit /etc/systemd/system/zookeeper.service
+```
+
+```
+sudo gedit /etc/systemd/system/kafka.service
+```
+
+```
+bin/zookeeper-server-start.sh config/zookeeper.properties
+bin/kafka-server-start.sh config/server.properties
+```
+
+Test topics:
+```
+bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
+bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 192.168.217.155:30105
+```
+
+Test producers:
+```
+bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092
+bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server 192.168.217.155:30105
+echo "Hello, World" | ~/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events > /dev/null
+```
+
+Test consumers:
+```
+bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092
+bin/kafka-console-consumer.sh --topic quickstart-events --bootstrap-server localhost:9092
+```
+
+To start Kafka:
+```
+sudo systemctl start kafka
+sudo journalctl -u kafka
+```
+
+Delete Kafka user:
+```
+sudo deluser kafka sudo
+sudo passwd kafka -l
+```
+
+
+### Kafka on Kubernetes
+
+Ref: https://learnk8s.io/kafka-ha-kubernetes
+Ref: https://strimzi.io/
+Ref: https://strimzi.io/quickstarts/
+
+```
+kubectl create namespace kafka
+kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.30.0/examples/kafka/kafka-ephemeral.yaml > kafka-ephemeral-2.yaml
+gedit ./kafka-ephemeral-2.yaml
+```
+Replace nodes count:
+- 2 > 1
+- 3 > 2
+
+```
+kubectl apply -f ./kafka-ephemeral-2.yaml -n kafka	
+kubectl -n kafka run kafka-producer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic
+kubectl -n kafka run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
+```
+
+### Alternative Kafka install
+
+Ref: https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
+Ref: https://github.com/nrsina/strimzi-kafka-tutorial
+
+```
+git clone -b 0.30.0 https://github.com/strimzi/strimzi-kafka-operator.git
+cd strimzi-kafka-operator
+sed -i 's/namespace: .*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
+kubectl create namespace kafka
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount kafka:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount kafka:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount kafka:strimzi-cluster-operator
+kubectl apply -f install/cluster-operator -n kafka
+kubectl get deployments -n kafka
+cp examples/kafka/kafka-ephemeral.yaml examples/kafka/kafka-ephemeral-2.yaml
+gedit examples/kafka/kafka-ephemeral-2.yaml
+```
+Replace:
+- 2 > 1
+- 3 > 2
+Set:
+```
+auto.create.topics.enable: "true"
+delete.topic.enable: "true"
+     - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+```
+
+```
+kubectl apply -f examples/kafka/kafka-ephemeral-2.yaml -n kafka
+kubectl get deployments -n kafka
+gedit kafka-topic.yaml
+```
+Set:
+```
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+```	
+
+```
+kubectl apply -f kafka-topic.yaml -n kafka
+kubectl get svc -n kafka
+kubectl run kafka-producer -ti --image=strimzi/kafka:0.20.0-rc1-kafka-2.6.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap.kafka:9092 --topic my-topic
+kubectl run kafka-consumer -ti --image=strimzi/kafka:0.20.0-rc1-kafka-2.6.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap.kafka:9092 --topic my-topic --from-beginning
+```
+
+To user Kafka externally:
+```
+gedit kafka-external.yaml
+```
+
+Set:
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-cluster-kafka-external-bootstrap
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+      # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+    - port: 9094
+      targetPort: 9094
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
+      nodePort: 30825
+```
+
+```
+kubectl apply -f kafka-external.yaml -n kafka
+cd ~
+git clone -b 3.2.0 https://github.com/apache/kafka.git
+cd kafka
+./gradlew jar -PscalaVersion=2.13.6
+bin/kafka-console-producer.sh --broker-list 192.168.217.155:31318 --topic my-topic
+bin/kafka-console-consumer.sh --bootstrap-server 192.168.217.155:31318 --topic my-topic --from-beginning
+```
+
+Using Kafka Cat:
+```
+sudo apt install -y kafkacat
+echo "hello world!" | kafkacat -P -b 192.168.217.155:31318 -t my-topic
+kafkacat -C -b 192.168.217.155:31318 -t my-topic
+```
+	
+### Setup Go Producer
+
+From https://snourian.com/kafka-kubernetes-strimzi-part-2-creating-producer-consumer-using-go-scala-deploying-on-kubernetes/
+
+```
+cd ~
+git clone https://github.com/nrsina/strimzi-kafka-tutorial.git
+
+cd strimzi-kafka-tutorial/strimzi-producer
+
+sudo docker build -t nrsina/strimzi-producer:v1 .
+
+sudo docker tag nrsina/strimzi-producer:v1 192.168.217.155:6000/strimzi-producer:v1
+sudo docker push 192.168.217.155:6000/strimzi-producer:v1
+
+gedit deployment/deployment.yml
+```
+
+Set:
+```
+image: 192.168.217.155:6000/strimzi-producer:v1
+imagePullPolicy: IfNotPresent
+        - name: SP_SLEEP_TIME_MS
+          value: "2000ms"
+```
+
+```
+kubectl apply -f deployment/deployment.yml
+
+kubectl logs -f strimzi-producer-deployment-7655d6c9d7-jjnfx
+
+sdk install sbt
+cd ~
+cd strimzi-kafka-tutorial/strimzi-consumer
+sudo chmod 666 /var/run/docker.sock
+sbt docker:publishLocal
+
+sudo docker tag nrsina/strimzi-consumer:v1 192.168.217.155:6000/strimzi-consumer:v1
+sudo docker push 192.168.217.155:6000/strimzi-consumer:v1
+
+gedit deployment/deployment.yml
+```
+
+Set:
+```
+replicas: 2
+image: 192.168.217.155:6000/strimzi-consumer:v1
+imagePullPolicy: IfNotPresent
+```
+
+```
+kubectl apply -f deployment/deployment.yml
+
+kubectl logs -f strimzi-consumer-deployment-f86469b6-c9cbt
+```
+
 
 ## Gitlab CI
 
