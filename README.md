@@ -83,9 +83,49 @@ hostnamectl set-hostname worker-node2
 
 ## Docker
 
+__Master__
+
+### Setting up Docker
 ```
 sudo apt-get install -y docker.io
 ```
+
+### Adding a proxy Docker registry on port 5000
+
+This will be used to store locally all images downloaded from the Internet. We can only download from it.
+```
+sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io -d -p 5000:5000 --restart=always --name registry-map2 registry:2
+```
+
+### Adding an internal Docker registry on port 6000
+
+This will be used to store locally all images build by our system. We will upload and download from it.
+```
+sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -d -p 6000:5000 --restart=always --name registry registry:2
+```
+
+### Now we need to allow http insecure access to our registries
+
+__Master & Workers__
+```
+sudo touch /etc/docker/daemon.json && sudo echo '{"registry-mirrors":["http://192.168.217.155:5000"],"insecure-registries":["192.168.217.155:5000","192.168.217.155:6000"]}' > /etc/docker/daemon.json
+sudo echo 'DOCKER_OPTS="--config-file=/etc/docker/daemon.json"' > /etc/default/docker
+sudo systemctl stop docker && sudo systemctl start docker
+```
+
+To see Docker status run:
+```
+sudo docker system info
+```
+
+To list the catalog:
+```
+curl http://192.168.217.155:6000/v2/_catalog
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
+```
+
+
 
 ## Kubernetes
 
@@ -107,6 +147,14 @@ sudo kubeadm init --control-plane-endpoint kube-master:6443 --pod-network-cidr 1
 
 At this step kubeadm will output a command to make worker nodes join the cluster starting *with sudo kubeadm join*. Save this command.
 
+The join token will live for 24 hours, so when you need to generate another one, use these commands:
+```
+kubeadm token list
+kubeadm token create --print-join-command
+```
+
+Now going on with the setup.
+
 ```
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -119,10 +167,11 @@ kubectl apply -f calico.yaml
 kubectl get nodes
 ```
 
-__Then you can start another terminal to watch for changes__
+Then you can start another terminal to watch for changes:
 ```
 watch kubectl get pods --all-namespaces
 ```
+
 
 __Workers__
 
@@ -132,6 +181,43 @@ sudo kubeadm join kube-master:6443 --token __some_token__ \
 	--discovery-token-ca-cert-hash sha256:__some_hash_code__
 ```
 
+### Using Kubernetes dashboard
+
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.0/aio/deploy/recommended.yaml
+kubectl proxy --address="192.168.217.155" -p 8001 --accept-hosts='^*$'
+```
+
+Then open http://192.168.217.155:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/ in a browser
+
+### Configuring ContainerD
+
+Latest versions of Kubernetes use ContainerD, so we need to configure insecure http image registries in it. 
+```
+kubectl get nodes -o wide
+sudo mkdir /etc/containerd
+sudo gedit /etc/containerd/config.toml
+```
+
+Now set the registries' urls and save:
+```
+[plugins.cri.registry]
+  [plugins.cri.registry.mirrors]
+    [plugins.cri.registry.mirrors."192.168.217.155:5000"]
+      endpoint = ["http://192.168.217.155:5000"]
+    [plugins.cri.registry.mirrors."192.168.217.155:6000"]
+      endpoint = ["http://192.168.217.155:6000"]
+  [plugins.cri.registry.configs]
+    [plugins.cri.registry.configs."192.168.217.155:5000".tls]
+      insecure_skip_verify = true
+    [plugins.cri.registry.configs."192.168.217.155:6000".tls]
+      insecure_skip_verify = true
+```
+	
+Now restart ContainerD:
+```
+sudo systemctl restart containerd
+```
 
 
 ## Kafka
@@ -139,6 +225,22 @@ sudo kubeadm join kube-master:6443 --token __some_token__ \
 To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
 
 ## Test web service project in Rust/Hyper
+
+### Setting up Rust
+
+__Master__
+```
+sudo apt install -y build-essential
+sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
+
+```
+cd ~/test-rust-hyper
+cargo build --release
+```
 
 ## Gitlab CI
 
