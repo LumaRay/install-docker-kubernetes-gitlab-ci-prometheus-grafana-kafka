@@ -237,6 +237,19 @@ cd ~/test-rust-hyper
 cargo build --release
 ```
 
+### Building Docker image
+```
+docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+```
+
+### Tagging, pushing, pulling
+```
+sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
+sudo docker push 192.168.217.155:6000/testrusthyper
+sudo docker pull 192.168.217.155:6000/testrusthyper
+```
+
+
 ## Kafka
 
 To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
