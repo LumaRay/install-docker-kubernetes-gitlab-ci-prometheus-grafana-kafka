@@ -1,0 +1,91 @@
+.caching_rust: &caching_rust
+    cache:
+      paths:
+        - .cargo/
+        - .cache/sccache
+        - target/x86_64-unknown-linux-musl/release/test-rust-hyper
+
+stages:
+    - build_binary
+    - build_docker
+    # - deploy
+
+
+prepare_deps_for_cargo:
+   stage: build_binary
+  #  image: jonoh/sccache-rust
+   image: 192.168.217.155:5000/clux/muslrust
+   <<: *caching_rust
+   before_script:
+      #  -  cargo install sccache
+      ##  - export CARGO_HOME="${PWD}/.cargo"
+      ##  - export CARGO_HOME="/usr/local/cargo"
+      #  - export CARGO_HOME="/root/.cargo"
+      #  - echo $CARGO_HOME
+      #  - export SCCACHE_DIR="${PWD}/.cache/sccache"
+      #  - echo $SCCACHE_DIR
+       - export PATH="/builds/test-rust-hyper/.cargo/bin:$PATH"
+      #  - export RUSTC_WRAPPER="$CARGO_HOME/bin/sccache"
+      #  - echo $RUSTC_WRAPPER
+
+   script:
+       -  cargo build --release --target=x86_64-unknown-linux-musl
+   cache:
+     paths:
+       - .cargo/
+      #  - .cache/sccache
+   artifacts:
+     paths:
+       - target/x86_64-unknown-linux-musl/release/test-rust-hyper
+
+
+build_docker_image:
+   stage: build_docker
+   image: 192.168.217.155:5000/library/docker:latest
+   << : *caching_rust
+   services:
+     - name: 192.168.217.155:5000/library/docker:dind
+       command: ["--tls=false", "--registry-mirror", "http://192.168.217.155:5000", "--insecure-registry", "http://192.168.217.155:5000", "--insecure-registry", "http://192.168.217.155:6000"]
+       alias: docker
+      #  entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
+      #  command: ["--tls=false"]
+   script:
+    #  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    #  - docker build -t registry.gitlab.com/astrolab-devops/material:0.2.1 .  
+    #  - docker push registry.gitlab.com/astrolab-devops/material:0.2.1
+    #  - export DOCKER_HOST=tcp://127.0.0.1:2375 && docker build --pull -t ${CI_REGISTRY_IMAGE} .
+    #  - echo '{"registry-mirrors":["http://192.168.217.155:5000"],"insecure-registries":["192.168.217.155:5000","192.168.217.155:6000"]}' > /etc/docker/daemon.json
+    #  - systemctl stop docker && systemctl start docker
+     - docker pull 192.168.217.155:5000/clux/muslrust
+     - docker build --rm -f "test.dockerfile" -t testrusthyper:latest .  
+    #  - export DOCKER_HOST=http://192.168.217.155:5000 && docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest .  
+     - docker login 192.168.217.155:6000 --username=docker_test --password=docker_pass
+     - docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper:latest
+     - docker push 192.168.217.155:6000/testrusthyper:latest
+     - docker save --output="testrusthyper-latest.tar" testrusthyper:latest
+   variables:
+  #    DOCKER_DRIVER: overlay
+  #    DOCKER_DRIVER: overlay2
+     DOCKER_HOST: tcp://docker:2375
+  #    DOCKER_HOST: tcp://127.0.0.1:2375/
+     DOCKER_TLS_CERTDIR: ""
+  #    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  #    FF_GITLAB_REGISTRY_HELPER_IMAGE: 1
+   artifacts:
+     name: "cryptoserver-image"
+     paths:
+       - testrusthyper-latest.tar
+
+# deploy:
+#   stage: deploy
+#   image:
+#     name: bitnami/kubectl:latest
+#     entrypoint: ['']
+#   script:
+#     - cat ${KUBECONFIG}
+#     - echo ${KUBE_CONTEXT}
+#     - kubectl config get-contexts
+#     - kubectl config use-context test-rust/hyper-1:testrusthyper-agent
+#     - kubectl config set-cluster gitlab --server=http://192.168.217.155/-/kubernetes-agent/k8s-proxy/ --insecure-skip-tls-verify
+#     - cat ${KUBECONFIG}
+#     - kubectl get pods

@@ -1,0 +1,57 @@
+# https://devopscube.com/setup-prometheus-monitoring-on-kubernetes/
+# https://prometheus.io/download/
+
+git clone https://github.com/bibinwilson/kubernetes-prometheus
+
+kubectl create namespace monitoring
+
+nano clusterRole.yaml
+
+kubectl create -f clusterRole.yaml
+
+nano config-map.yaml
+
+kubectl create -f config-map.yaml
+
+nano prometheus-deployment.yaml
+
+kubectl create -f prometheus-deployment.yaml 
+
+kubectl rollout restart deployment prometheus-deployment --namespace monitoring
+
+kubectl get deployments --namespace=monitoring
+
+# kubectl get pods --namespace=monitoring
+
+# kubectl port-forward prometheus-deployment-77484b466d-wbfzs 8080:9090 -n monitoring
+
+nano prometheus-service.yaml
+
+kubectl create -f prometheus-service.yaml --namespace=monitoring
+
+
+
+
+# https://agraj.medium.com/monitoring-kafka-on-kubernetes-with-prometheus-5b1d1518102
+
+git clone https://github.com/agrajm/strimzi-kafka-aks.git
+cd strimzi-kafka-aks
+
+kubectl create namespace monitoring
+
+kubectl apply -f monitoring/prometheus-setup/prometheus-operator-service-account.yaml -n monitoring
+kubectl apply -f monitoring/prometheus-setup/prometheus-operator-cluster-role.yaml -n monitoring
+kubectl apply -f monitoring/prometheus-setup/prometheus-operator-cluster-role-binding.yaml -n monitoring
+kubectl apply -f monitoring/prometheus-setup/prometheus-operator-deployment.yaml -n monitoring
+
+kubectl apply -f monitoring/strimzi-service-monitor.yaml -n monitoring
+
+kubectl apply -f monitoring/prometheus-rules.yaml -n monitoring
+
+...
+
+
+
+
+# https://snourian.com/kafka-kubernetes-strimzi-part-3-monitoring-strimzi-kafka-with-prometheus-grafana/
+

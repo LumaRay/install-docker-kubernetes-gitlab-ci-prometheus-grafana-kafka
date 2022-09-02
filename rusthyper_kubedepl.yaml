@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-hyper-depl
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      rust-hyper: web
+  template:
+    metadata:
+      labels:
+        rust-hyper: web
+    spec:
+      containers:
+      - name: rust-hyper-site
+        image: 192.168.217.155:6000/testrusthyper
+        # imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
+      imagePullSecrets:
+      - name: regsec
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-hyper-entrypoint
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    rust-hyper: web
+  ports:
+  - port: 5555
+    targetPort: 5555
+    nodePort: 30001

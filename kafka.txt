@@ -1,0 +1,425 @@
+# https://www.letscloud.io/community/how-install-apache-kafka-ubuntu-18-04
+# https://kafka.apache.org/quickstart
+
+# https://hub.docker.com/r/bitnami/kafka/
+# docker pull bitnami/kafka
+
+# https://github.com/kafka-rust/kafka-rust
+
+
+sudo useradd kafka -m
+
+# 123
+sudo passwd kafka
+
+sudo adduser kafka sudo
+
+su -l kafka
+
+
+mkdir ~/Downloads
+
+curl "https://dlcdn.apache.org/kafka/3.2.0/kafka-3.2.0-src.tgz" -o ~/Downloads/kafka.tgz
+
+mkdir ~/kafka && cd ~/kafka
+
+tar -xvzf ~/Downloads/kafka.tgz --strip 1
+
+nano ~/kafka/config/server.properties
+
+delete.topic.enable = true
+
+./gradlew jar -PscalaVersion=2.13.6
+
+
+sudo nano /etc/systemd/system/zookeeper.service
+
+sudo nano /etc/systemd/system/kafka.service
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+
+bin/kafka-server-start.sh config/server.properties
+
+# bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
+# bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 192.168.217.155:30105
+
+# bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092
+# bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server 192.168.217.155:30105
+# echo "Hello, World" | ~/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events > /dev/null
+
+# bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092
+# bin/kafka-console-consumer.sh --topic quickstart-events --bootstrap-server localhost:9092
+
+
+
+sudo systemctl start kafka
+
+sudo journalctl -u kafka
+
+# sudo systemctl enable kafka
+
+
+
+sudo deluser kafka sudo
+
+sudo passwd kafka -l
+
+# sudo su - kafka
+
+# sudo passwd kafka -u
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Kubernetes
+
+# https://learnk8s.io/kafka-ha-kubernetes
+
+# https://strimzi.io/
+
+# https://strimzi.io/quickstarts/
+
+kubectl create namespace kafka
+
+kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+
+# nano ./kafka-persistent-volume-1Gi.yaml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka1gi-pv-home
+  labels:
+    type: local
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: "/mnt/data/kafka1gi"
+
+# kubectl apply -f ./kafka-persistent-volume-1Gi.yaml -n kafka	
+
+# sudo mkdir /mnt/data && sudo mkdir /mnt/data/kafka1gi && sudo chmod 777 /mnt/data/kafka1gi
+
+# kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-persistent-single.yaml -n kafka 
+# kubectl apply -f ./kafka-persistent-2.yaml -n kafka 
+
+curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.30.0/examples/kafka/kafka-ephemeral.yaml > kafka-ephemeral-2.yaml
+nano ./kafka-ephemeral-2.yaml
+2 > 1
+3 > 2
+kubectl apply -f ./kafka-ephemeral-2.yaml -n kafka	
+
+kubectl -n kafka run kafka-producer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic
+
+kubectl -n kafka run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
+
+
+
+
+
+# https://www.weave.works/blog/kafka-on-kubernetes-and-deploying-best-practice
+
+nano zooservice.yaml
+
+kubectl create -f ./zooservice.yaml
+
+kubectl create -f ./zooservice2.yaml
+
+kubectl create -f ./zooservice3.yaml
+
+kubectl create -f ./zooservice4.yaml
+
+kubectl delete -f ./zooservice4.yaml && kubectl delete -f ./zooservice3.yaml && kubectl delete -f ./zooservice2.yaml && kubectl delete -f ./zooservice.yaml
+
+kubectl port-forward kafka-broker-57b7b98555-ccl7m 9092
+
+kubectl port-forward service/kafka-service 9092:9092
+
+kafkacat -b kafka-broker:30718 -L
+
+kubectl describe services kafka-service
+
+
+
+
+# https://levelup.gitconnected.com/how-to-deploy-apache-kafka-with-kubernetes-9bd5caf7694f
+
+nano 00-namespace.yaml
+
+kubectl apply -f 00-namespace.yaml
+
+kubectl get namespaces
+
+nano 01-zookeeper.yaml
+
+kubectl apply -f 01-zookeeper.yaml
+
+kubectl get services -n kafka
+
+# replace <ZOOKEEPER-INTERNAL-IP> with the CLUSTER-IP
+nano 02-kafka.yaml
+
+kubectl apply -f 02-kafka.yaml
+
+sudo nano /etc/hosts
+
+# 127.0.0.1 kafka-broker
+
+kubectl port-forward kafka-broker-57b7b98555-ccl7m 9092 -n kafka
+
+echo "hello world!" | kafkacat -P -b localhost:9092 -t test
+
+kafkacat -C -b localhost:9092 -t test
+
+
+
+
+
+
+# https://github.com/Yolean/kubernetes-kafka
+
+kubectl create namespace kafka && \
+kubectl apply -k github.com/Yolean/kubernetes-kafka/variants/dev-small/?ref=v6.0.3
+
+kubectl create namespace kafka && \
+kubectl apply -k github.com/Yolean/kubernetes-kafka/variants/scale-2/?ref=v6.0.4
+
+kafkacat -b localhost:9094 -L over kubectl -n kafka port-forward kafka-0 9094
+
+
+
+
+# https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
+# https://github.com/nrsina/strimzi-kafka-tutorial
+
+git clone -b 0.30.0 https://github.com/strimzi/strimzi-kafka-operator.git
+
+# cd strimzi-kafka-operator/install/cluster-operator
+cd strimzi-kafka-operator
+
+sed -i 's/namespace: .*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
+
+kubectl create namespace kafka
+
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount kafka:strimzi-cluster-operator
+
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount kafka:strimzi-cluster-operator
+
+kubectl create clusterrolebinding strimzi-cluster-operator-topic-operator-delegation --clusterrole=strimzi-topic-operator --serviceaccount kafka:strimzi-cluster-operator
+
+kubectl apply -f install/cluster-operator -n kafka
+
+kubectl get deployments -n kafka
+
+cp examples/kafka/kafka-ephemeral.yaml examples/kafka/kafka-ephemeral-2.yaml
+nano examples/kafka/kafka-ephemeral-2.yaml
+2 > 1
+3 > 2
+auto.create.topics.enable: "true"
+delete.topic.enable: "true"
+     - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+
+kubectl apply -f examples/kafka/kafka-ephemeral-2.yaml -n kafka
+
+kubectl get deployments -n kafka
+
+nano kafka-topic.yaml
+
+apiVersion: kafka.strimzi.io/v1beta1
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+	
+kubectl apply -f kafka-topic.yaml -n kafka
+
+kubectl get svc -n kafka
+
+kubectl run kafka-producer -ti --image=strimzi/kafka:0.20.0-rc1-kafka-2.6.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap.kafka:9092 --topic my-topic
+
+kubectl run kafka-consumer -ti --image=strimzi/kafka:0.20.0-rc1-kafka-2.6.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap.kafka:9092 --topic my-topic --from-beginning
+
+# nano kafka-external.yaml
+
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: my-cluster-kafka-external-bootstrap
+# spec:
+#   type: NodePort
+#   selector:
+#     app.kubernetes.io/name: MyApp
+#   ports:
+#       # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+#     - port: 9094
+#       targetPort: 9094
+#       # Optional field
+#       # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
+#       nodePort: 30825
+	  
+# kubectl apply -f kafka-external.yaml -n kafka
+
+# cd ~
+
+# git clone -b 3.2.0 https://github.com/apache/kafka.git
+
+# cd kafka
+
+# ./gradlew jar -PscalaVersion=2.13.6
+
+# bin/kafka-console-producer.sh --broker-list 192.168.217.155:31318 --topic my-topic
+
+# bin/kafka-console-consumer.sh --bootstrap-server 192.168.217.155:31318 --topic my-topic --from-beginning
+
+sudo apt install -y kafkacat
+
+echo "hello world!" | kafkacat -P -b 192.168.217.155:31318 -t my-topic
+
+kafkacat -C -b 192.168.217.155:31318 -t my-topic
+
+
+
+
+# go producer
+
+# https://snourian.com/kafka-kubernetes-strimzi-part-2-creating-producer-consumer-using-go-scala-deploying-on-kubernetes/
+
+cd ~
+git clone https://github.com/nrsina/strimzi-kafka-tutorial.git
+
+cd strimzi-kafka-tutorial/strimzi-producer
+
+sudo docker build -t nrsina/strimzi-producer:v1 .
+
+sudo docker tag nrsina/strimzi-producer:v1 192.168.217.155:6000/strimzi-producer:v1
+sudo docker push 192.168.217.155:6000/strimzi-producer:v1
+
+nano deployment/deployment.yml
+image: 192.168.217.155:6000/strimzi-producer:v1
+imagePullPolicy: IfNotPresent
+        - name: SP_SLEEP_TIME_MS
+          value: "2000ms"
+		  
+kubectl apply -f deployment/deployment.yml
+
+kubectl logs -f strimzi-producer-deployment-7655d6c9d7-jjnfx
+
+
+# sdk install java $(sdk list java | grep -o "\b8\.[0-9]*\.[0-9]*\-tem" | head -1)
+sdk install sbt
+
+cd ~
+cd strimzi-kafka-tutorial/strimzi-consumer
+sudo chmod 666 /var/run/docker.sock
+sbt docker:publishLocal
+
+sudo docker tag nrsina/strimzi-consumer:v1 192.168.217.155:6000/strimzi-consumer:v1
+sudo docker push 192.168.217.155:6000/strimzi-consumer:v1
+
+nano deployment/deployment.yml
+replicas: 2
+image: 192.168.217.155:6000/strimzi-consumer:v1
+imagePullPolicy: IfNotPresent
+
+kubectl apply -f deployment/deployment.yml
+
+kubectl logs -f strimzi-consumer-deployment-f86469b6-c9cbt
+
+
+
+
+# Prometheus
+
+gedit ~/strimzi-kafka-operator/examples/metrics/kafka-metrics.yaml
+gedit ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml
+# copy metrics
+
+kubectl apply -f ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml -n kafka
+
+cd ~ && mkdir prometheus
+
+cd ~/prometheus
+
+# curl -s https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml | sed -e 's/namespace: .*/namespace: monitoring/' > bundle.yaml
+
+curl -s https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml > bundle.yaml
+gedit bundle.yaml
+namespace: default -> namespace: monitoring
+
+kubectl create namespace monitoring
+
+kubectl apply -f bundle.yaml -n monitoring --force-conflicts=true --server-side
+
+kubectl get pods -n monitoring
+
+kubectl get svc -n monitoring
+
+cd ~/strimzi-kafka-operator/examples/metrics/prometheus-additional-properties
+
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml -n monitoring
+kubectl apply -f prometheus-additional.yaml -n monitoring
+
+cd ~/strimzi-kafka-operator/examples/metrics/prometheus-install
+
+nano strimzi-pod-monitor.yaml
+myproject -> kafka
+	  
+kubectl apply -f strimzi-pod-monitor.yaml -n monitoring
+
+gedit prometheus.yaml
+namespace: myproject -> namespace: monitoring
+
+kubectl apply -f prometheus-rules.yaml -n monitoring
+
+kubectl apply -f prometheus.yaml -n monitoring
+
+kubectl get pods -n monitoring
+
+
+
+
+# Grafana
+
+cd ~/strimzi-kafka-operator/examples/metrics/grafana-install
+kubectl apply -f grafana.yaml -n monitoring
+
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
+
+# Open http://localhost:3000 
+# add Prometheus as a new Data Source.
+# Inside the Settings tap, you need to enter Prometheus address
+
+kubectl get svc -n monitoring
+
+# http://prometheus-operated:9090
+# http://prometheus-operated.monitoring:9090 or http://prometheus-operator.monitoring.svc.cluster.local:9090
+
+# import these files through the Grafana webpage:
+# ~/strimzi-kafka-operator/examples/metrics/grafana-dashboards
+# strimzi-kafka.json
+# strimzi-kafka-exporter.json
+# strimzi-operators.json
+# strimzi-zookeeper.json
+

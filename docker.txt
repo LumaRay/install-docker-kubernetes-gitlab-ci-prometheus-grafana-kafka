@@ -1,0 +1,6 @@
+// docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+// docker run -p 0.0.0.0:8080:5555 testrusthyper
+// "/usr/bin/bash '-c', 'docker run --rm -it  -p 5555:5555/tcp testrusthyper:latest'"
+// docker run --privileged --rm -it  -p 5555:5555/tcp testrusthyper:latest
+// docker run --security-opt seccomp=unconfined --rm -it  -p 5555:5555/tcp testrusthyper:latest
+// docker run --privileged --net=host --rm -it  -p 5555:5555/tcp testrusthyper:latest

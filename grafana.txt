@@ -1,0 +1,30 @@
+# https://grafana.com/docs/grafana/next/setup-grafana/installation/
+# http://192.168.217.155/help/operations/metrics/embed_grafana#use-integration-with-grafana-api
+
+nano grafana.yaml
+
+kubectl apply -f grafana.yaml
+
+# kubectl port-forward service/grafana 3000:3000
+
+nano grafana-service.yaml
+
+kubectl create -f grafana-service.yaml --namespace=default
+
+kubectl rollout restart deployment grafana --namespace default
+
+localhost:3000
+admin
+admin
+fZer8dTT7hn9CKS
+
+
+API Key Created
+Key
+eyJrIjoiMDFwVk5jT3dFUmZyTGFpMXJpbElNYk51VEU4MzlldGUiLCJuIjoiZ2l0bGFiLWtleSIsImlkIjoxfQ==
+You will only be able to view this key here once!
+It is not stored in this form, so be sure to copy it now.
+
+You can authenticate a request using the Authorization HTTP header, example:
+
+curl -H "Authorization: Bearer eyJrIjoiMDFwVk5jT3dFUmZyTGFpMXJpbElNYk51VEU4MzlldGUiLCJuIjoiZ2l0bGFiLWtleSIsImlkIjoxfQ==" http://localhost:3000/api/dashboards/home

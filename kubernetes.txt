@@ -1,0 +1,274 @@
+https://thinkvirtualblog.wordpress.com/2021/04/25/install-kubernetes-on-vmware-workstation/
+https://rudimartinsen.com/2020/08/08/setting-up-a-kubernetes-cluster-vms/
+https://faun.pub/optimizing-ci-cd-pipeline-for-rust-projects-gitlab-docker-98df64ae3bc4
+
+
+# Master + Worker
+
+sudo apt-get upgrade
+
+backup
+
+sudo apt install -y net-tools htop
+
+ifconfig
+
+sudo cp /etc/network/interfaces /root/
+sudo nano /etc/network/interfaces
+# Master + Worker
+auto ens33
+iface ens33 inet static
+# Master
+ address 192.168.217.155
+# Worker
+ address 192.168.217.156
+# Worker2
+ address 192.168.217.157
+# Master + Worker
+ netmask 255.255.255.0
+ gateway 192.168.217.2
+ dns-nameservers 192.168.217.2 8.8.8.8 1.1.1.1
+
+sudo nano /etc/hosts
+
+192.168.217.155 kube-master
+192.168.217.156 kube-worker
+192.168.217.157 kube-worker2
+
+# sudo systemctl restart networking.service
+# sudo systemctl status networking.service
+sudo /etc/init.d/networking restart
+sudo netplan apply
+
+# Master
+hostnamectl set-hostname master-node
+
+# Worker
+hostnamectl set-hostname worker-node
+# Worker2
+hostnamectl set-hostname worker-node2
+
+sudo swapoff -a
+sudo nano /etc/fstab
+Comment: # ... swap ...
+
+sudo apt-get update && sudo apt-get install -y docker.io
+
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-get update && sudo apt-get install -y kubelet kubeadm kubectl
+# sudo apt-mark hold kubelet kubeadm kubectl
+
+# Master Worker reset
+# sudo kubeadm reset
+
+# Master
+sudo kubeadm init --control-plane-endpoint kube-master:6443 --pod-network-cidr 192.168.150.0/23
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+curl https://docs.projectcalico.org/manifests/calico.yaml -O
+
+nano calico.yaml
+
+- name: CALICO_IPV4POOL_CIDR
+  value: "192.168.150.0/23"
+  
+kubectl apply -f calico.yaml
+
+kubectl get nodes
+
+watch kubectl get pods --all-namespaces
+
+
+# Worker
+# sudo kubeadm join kube-master:6443 --token f6r2wr.zyb22t4za6jlb6ph \
+	--discovery-token-ca-cert-hash sha256:41ff5eb8921a05ae98d2616ac0f9d1f967cafbac16e6718ed987ff367da977f5
+
+
+# Worker 2+
+
+kubeadm token list
+kubeadm token create --print-join-command
+# sudo kubeadm join kube-master:6443 --token d75s9h.rbatgkm6p4s3uxeh --discovery-token-ca-cert-hash sha256:41ff5eb8921a05ae98d2616ac0f9d1f967cafbac16e6718ed987ff367da977f5
+
+You can now join any number of control-plane nodes by copying certificate authorities
+and service account keys on each node and then running the following as root:
+
+  kubeadm join kube-master:6443 --token 0pchqd.g8zg3uub2bwbmcsy \
+	--discovery-token-ca-cert-hash sha256:276ec4af74411cd5e513dee8e59fa08c9649d6cd34040afd3a3dd783d8744446 \
+	--control-plane 
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join kube-master:6443 --token 0pchqd.g8zg3uub2bwbmcsy \
+	--discovery-token-ca-cert-hash sha256:276ec4af74411cd5e513dee8e59fa08c9649d6cd34040afd3a3dd783d8744446 
+
+
+
+
+
+
+
+
+# rust
+
+sudo apt install -y build-essential
+sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+cargo build --release
+sudo docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+sudo docker run --privileged --net=host --rm -it  -p 5555:5555/tcp testrusthyper:latest
+sudo docker run --privileged --net=host --rm -it  -p 5555:5555/tcp testrusthyper:latest sh
+
+
+kubectl apply -f ./rusthyper_kubedepl.yaml
+# kubectl delete -f ./rusthyper_kubedepl.yaml
+kubectl run rust-hyper --image=testrusthyper:v1 --image-pull-policy=IfNotPresent
+kubectl run rust-hyper --image=192.168.217.155:5000/testrusthyper --image-pull-policy=IfNotPresent --port 30001
+kubectl describe pods rust-hyper
+kubectl logs kubectl logs rust-hyper-depl-787b6d9c97-fxhqm
+
+
+
+
+# docker registry
+
+https://docs.docker.com/registry/deploying/
+
+#sudo docker run -d -p 5000:5000 -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io --restart=always --name registry registry:2
+sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -e REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io -d -p 5000:5000 --restart=always --name registry-map2 registry:2
+#sudo docker run -e REGISTRY_PROXY_REMOTEURL=https://index.docker.io/v1/ -d -p 5000:5000 --restart=always --name registry-map2 registry:2
+sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -d -p 6000:5000 --restart=always --name registry registry:2
+
+sudo nano /etc/docker/daemon.json
+{ "registry-mirrors": ["http://192.168.217.155:5000"] }
+
+
+#sudo docker rm registry
+
+# Worker (+ Master?)
+sudo nano /etc/docker/daemon.json
+{ "insecure-registries":["192.168.217.155:5000", "192.168.217.155:6000"] }
+
+# sudo echo '{"insecure-registries":["192.168.217.155:5000", "192.168.217.155:6000"]}' > /etc/docker/daemon.json
+
+# sudo touch /etc/docker/daemon.json && sudo echo '{"registry-mirrors":["http://192.168.217.155:5000"],"insecure-registries":["192.168.217.155:5000","192.168.217.155:6000"]}' > /etc/docker/daemon.json
+
+sudo nano /etc/default/docker
+DOCKER_OPTS="--config-file=/etc/docker/daemon.json"
+sudo systemctl stop docker && sudo systemctl start docker
+
+sudo docker system info
+
+curl http://192.168.217.155:6000/v2/_catalog
+#curl -X DELETE 192.168.217.155:6000/v1/repositories/testrusthyper/tags/latest
+#curl -X DELETE 192.168.217.155:6000/v2/testrusthyper/manifests/<reference>
+
+GET 192.168.217.155:6000/v2/testrusthyper/tags/list
+GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
+
+https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+
+sudo docker login 192.168.217.155:6000 --username=docker_test --password=docker_pass
+
+sudo cat ~/.docker/config.json
+{
+	"auths": {
+		"192.168.217.155:5000": {
+			"auth": "ZG9ja2VyX3Rlc3Q6ZG9ja2VyX3Bhc3M="
+		}
+	}
+}
+
+sudo kubectl create secret generic regsec --from-file=.dockerconfigjson=/home/test/.docker/config.json --type=kubernetes.io/dockerconfigjson
+# kubectl create secret docker-registry regsec --docker-server=192.168.217.155:5000 --docker-username=docker_test --docker-password=docker_pass
+kubectl get secrets regsec -o yaml
+# kubectl delete secret regsec
+
+sudo docker tag testrusthyper:latest 192.168.217.155:5000/testrusthyper
+sudo docker push 192.168.217.155:5000/testrusthyper
+# sudo docker tag testrusthyper:latest lumaray/test-rust1
+# sudo docker push lumaray/test-rust1
+# sudo docker image remove testrusthyper:latest
+# sudo docker image remove localhost:5000/testrusthyper
+# sudo docker pull localhost:5000/testrusthyper
+sudo docker pull 192.168.217.155:6000/testrusthyper
+# sudo docker container stop registry
+# sudo docker container rm -v registry
+
+
+
+
+docker save -o <path for generated tar file> <image name>
+docker load -i <path to image tar file>
+docker save -o c:/myfile.tar centos:16
+
+docker export CONTAINER_ID > my_container.tar
+
+docker save awesomesauce:latest > awesomesauce.tar
+docker load < awesomesauce.tar
+
+docker save <docker image name> | gzip > <docker image name>.tar.gz
+zcat <docker image name>.tar.gz | docker load
+
+docker save app:1.0 | gzip | DOCKER_HOST=ssh://user@remotehost docker load
+
+
+
+
+
+# dashboard
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.0/aio/deploy/recommended.yaml
+# kubectl proxy
+kubectl proxy --address="192.168.217.155" -p 8001 --accept-hosts='^*$'
+http://192.168.217.155:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+
+
+
+# shutdown
+
+shutdown -h now
+
+
+
+
+# containerd
+
+kubectl get nodes -o wide
+
+sudo mkdir /etc/containerd
+sudo nano /etc/containerd/config.toml
+# change <IP>:5000 to your registry url
+
+[plugins.cri.registry]
+  [plugins.cri.registry.mirrors]
+    [plugins.cri.registry.mirrors."192.168.217.155:5000"]
+      endpoint = ["http://192.168.217.155:5000"]
+    [plugins.cri.registry.mirrors."192.168.217.155:6000"]
+      endpoint = ["http://192.168.217.155:6000"]
+  [plugins.cri.registry.configs]
+    [plugins.cri.registry.configs."192.168.217.155:5000".tls]
+      insecure_skip_verify = true
+    [plugins.cri.registry.configs."192.168.217.155:6000".tls]
+      insecure_skip_verify = true
+	  
+sudo systemctl restart containerd
+
+
+
+kubectl rollout restart deployment rust-hyper-depl
+
+
+kubectl config get-contexts
+
+kubectl cluster-info --context kubernetes-admin@kubernetes
+
+kubectl config use-context kubernetes-admin@kubernetes

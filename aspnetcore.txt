@@ -1,0 +1,63 @@
+# DotNet
+# https://docs.microsoft.com/en-us/dotnet/core/install/linux-ubuntu#1804
+sudo apt install curl
+# bash <(curl -s https://dot.net/v1/dotnet-install.sh)
+
+wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+
+sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0
+  
+# sudo apt-get update && sudo apt-get install -y aspnetcore-runtime-6.0
+  
+# sudo apt-get install -y dotnet-runtime-6.0
+
+
+
+# VSCode
+sudo apt-get install wget gpg
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+rm -f packages.microsoft.gpg
+
+sudo apt install apt-transport-https
+sudo apt update
+sudo apt install code
+
+
+# webapp
+# https://docs.microsoft.com/en-us/troubleshoot/developer/webapps/aspnetcore/practice-troubleshoot-linux/2-1-create-configure-aspnet-core-applications
+dotnet new webapp -n TestAspNetCore -o test-asp-net-core 
+cd ./test-asp-net-core
+code .
+dotnet publish
+dotnet ./bin/Debug/net6.0/TestAspNetCore.dll
+# https://docs.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel?view=aspnetcore-6.0
+# https://docs.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis?view=aspnetcore-6.0
+# var builder = WebApplication.CreateBuilder(args);
+# var app = builder.Build();
+# app.MapGet("/", () => "Hello World!");
+# app.Run();
+
+# wrk
+sudo apt install git
+sudo apt install -y build-essential
+git clone https://github.com/wg/wrk.git
+cd wrk
+make
+~/wrk/wrk -t4 -c400 -d30s http://127.0.0.1:5001/
+
+# htop
+sudo apt install htop
+
+
+
+# Python Blacksheep (4 cores) 100MB/sec
+# Java Spring Web (4 cores) 200MB/sec
+# C++ Lithium (1 core) 250MB/sec
+# C# Core Kestrel (4 cores) 400MB/sec
+# Go Fasthttp (4 cores) 700MB/sec
+# Rust Hyper (4 cores) 850MB/sec
+

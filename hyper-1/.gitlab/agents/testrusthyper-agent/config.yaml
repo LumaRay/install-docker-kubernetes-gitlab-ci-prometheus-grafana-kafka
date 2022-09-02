@@ -1,0 +1,4 @@
+# hyper-1 .gitlab agents testrusthyper-agent config.yaml
+ci_access:
+  projects:
+    - id: test-rust/hyper-1

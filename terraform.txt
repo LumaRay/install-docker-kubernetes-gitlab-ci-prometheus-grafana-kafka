@@ -1,0 +1,17 @@
+# доступ ограничен, нужен впн
+# https://learn.hashicorp.com/tutorials/terraform/kubernetes-provider
+
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64
+chmod +x ./kind
+#mv ./kind /some-dir-in-your-PATH/kind
+sudo mv ./kind /usr/bin/kind
+
+curl https://raw.githubusercontent.com/hashicorp/learn-terraform-deploy-nginx-kubernetes-provider/main/kind-config.yaml --output kind-config.yaml
+
+sudo kind create cluster --name terraform-learn --config kind-config.yaml
+
+sudo kind get clusters
+
+kubectl cluster-info --context kind-terraform-learn
+
+kubectl config use-context kind-terraform-learn

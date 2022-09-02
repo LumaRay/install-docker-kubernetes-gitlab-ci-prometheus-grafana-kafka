@@ -1,0 +1,109 @@
+# The default runtime for 1.21 will still be Docker, and you can opt-in to containerd runtime by adding a --container-runtime containerd option to your user data.
+# https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.21.md#v12114
+docker 20.10
+
+
+# Master + Worker
+
+sudo apt-get upgrade
+
+backup
+
+sudo apt install -y net-tools htop
+
+ifconfig
+
+sudo nano /etc/hosts
+
+192.168.217.155 kube-master mykube.com kas.mykube.com minio.mykube.com registry.mykube.com gitlab.mykube.com
+192.168.217.156 kube-worker
+192.168.217.157 kube-worker2
+
+
+# Master
+hostnamectl set-hostname master-node
+
+# Worker
+hostnamectl set-hostname worker-node
+# Worker2
+hostnamectl set-hostname worker-node2
+
+sudo /etc/init.d/networking restart
+sudo netplan apply
+
+
+
+sudo swapoff -a
+sudo nano /etc/fstab
+Comment: # ... swap ...
+
+
+curl -s https://packages.cloud.google.com/apt/dists/kubernetes-xenial/main/binary-amd64/Packages | grep Version | awk '{print $2}'
+
+sudo apt-get update && sudo apt-get install -y apt-transport-https curl
+
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+sudo apt-get update && sudo apt-get install -y kubelet=1.21.14-00 kubeadm=1.21.14-00 kubectl=1.21.14-00
+
+
+
+
+sudo -i
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+apt-get update -y
+apt-cache madison docker-ce
+# docker-ce | 5:20.10.17
+# apt list -a docker.io
+# sudo apt-get update && sudo apt-get install -y docker.io=5:20.10.17
+exit
+sudo apt-get install docker-ce=5:20.10.17~3-0~ubuntu-bionic
+
+# Master
+sudo kubeadm init --control-plane-endpoint kube-master:6443 --pod-network-cidr 192.168.150.0/23
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+curl https://docs.projectcalico.org/manifests/calico.yaml -O
+
+nano calico.yaml
+
+- name: CALICO_IPV4POOL_CIDR
+  value: "192.168.150.0/23"
+  
+kubectl apply -f calico.yaml
+
+# Workers
+
+sudo kubeadm join kube-master:6443 --token tfnvt3.16bg9ml5lr8bthis \
+	--discovery-token-ca-cert-hash sha256:4eb492f3367827b0725956f9bbf0ecf6fe1a3bc396a72965e36cc10a4f8f962e
+
+
+
+
+# GitLab
+# Master
+# https://docs.gitlab.com/charts/quickstart/index.html
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+helm repo add gitlab https://charts.gitlab.io/
+helm install gitlab gitlab/gitlab \
+  --set global.hosts.domain=kube-master \
+  --set certmanager-issuer.email=me@kube-master
+
+helm repo add gitlab https://charts.gitlab.io/
+helm install gitlab gitlab/gitlab \
+  --set global.hosts.domain=mykube.com \
+  --set certmanager-issuer.email=me@mykube.com
+  
+kubectl get ingress -lrelease=gitlab
+
+helm uninstall gitlab
