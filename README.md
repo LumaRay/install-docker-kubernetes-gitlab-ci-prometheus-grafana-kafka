@@ -610,7 +610,7 @@ sudo docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
 Will get something like:
 ```
 root
-MHwh7cnbvHYg1zA1OR5dzZEpFIjjAr6HY9wqYTj9kWA=
+<password>
 ```
 
 ```
@@ -664,7 +664,7 @@ ci_access:
 Connect a Kubernetes cluster
 Agent access token:
 
-x7HCeVjrBUoPH4358WLa8-73GV_hem_fzcyWWXkCLyWze_WBdQ
+<TOKEN>
 
 The agent uses the token to connect with GitLab.
 
@@ -680,7 +680,7 @@ sudo helm upgrade --install testrusthyper-agent gitlab/gitlab-agent \
     --namespace gitlab-agent \
     --create-namespace \
     --set image.tag=v15.1.0 \
-    --set config.token=x7HCeVjrBUoPH4358WLa8-73GV_hem_fzcyWWXkCLyWze_WBdQ \
+    --set config.token=<TOKEN> \
     --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
 sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
   --namespace gitlab-agent \
