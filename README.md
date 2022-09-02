@@ -352,6 +352,7 @@ gedit examples/kafka/kafka-ephemeral-2.yaml
 Replace:
 - 2 > 1
 - 3 > 2
+
 Set:
 ```
 auto.create.topics.enable: "true"
@@ -487,9 +488,6 @@ kubectl apply -f deployment/deployment.yml
 kubectl logs -f strimzi-consumer-deployment-f86469b6-c9cbt
 ```
 
-
-## Gitlab CI
-
 ## Prometheus
 
 Edit configurations:
@@ -573,3 +571,109 @@ Import these files through the Grafana webpage:
 - strimzi-kafka-exporter.json
 - strimzi-operators.json
 - strimzi-zookeeper.json
+
+
+## Gitlab CI
+
+```
+export GITLAB_HOME=/srv/gitlab
+sudo docker rm -f gitlab
+sudo docker run --detach \
+  --hostname 192.168.217.155 \
+  --publish 443:443 --publish 80:80 --publish 22:22 \
+  --name gitlab \
+  --restart always \
+  --volume $GITLAB_HOME/config:/etc/gitlab \
+  --volume $GITLAB_HOME/logs:/var/log/gitlab \
+  --volume $GITLAB_HOME/data:/var/opt/gitlab \
+  --shm-size 256m \
+  gitlab/gitlab-ee:latest
+
+sudo docker logs -f gitlab
+
+sudo docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
+```
+
+Will get something like:
+```
+root
+MHwh7cnbvHYg1zA1OR5dzZEpFIjjAr6HY9wqYTj9kWA=
+```
+
+```
+export GITLAB_CI_SERVER_URL=http://192.168.217.155
+```
+
+__Worker1__
+```
+sudo docker run -d --name gitlab-runner --restart always \
+  -v /srv/gitlab-runner/config:/etc/gitlab-runner \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  gitlab/gitlab-runner:latest
+  
+sudo docker run --rm -it -v /srv/gitlab-runner/config:/etc/gitlab-runner gitlab/gitlab-runner register
+
+sudo gedit /srv/gitlab-runner/config/config.toml
+```
+Set:
+```
+[[runners]]
+clone_url = "http://192.168.217.155/"
+[runners.docker]
+hostname = "http://192.168.217.155/"
+image = docker:dind
+privileged = true
+```
+
+```
+sudo docker restart gitlab-runner
+```
+
+### To install Helm:
+```
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+```
+
+Create git repo at: .gitlab/agents/testrusthyper-agent/config.yaml
+```
+gedit .gitlab/agents/testrusthyper-agent/config.yaml
+```
+Set:
+```
+ci_access:
+  projects:
+    - id: test-rust/hyper-1
+```
+
+
+Connect a Kubernetes cluster
+Agent access token:
+
+x7HCeVjrBUoPH4358WLa8-73GV_hem_fzcyWWXkCLyWze_WBdQ
+
+The agent uses the token to connect with GitLab.
+
+You cannot see this token again after you close this window.
+Install using Helm (recommended)
+
+From a terminal, connect to your cluster and run this command. The token is included in the command.
+
+```
+sudo helm repo add gitlab https://charts.gitlab.io
+sudo helm repo update
+sudo helm upgrade --install testrusthyper-agent gitlab/gitlab-agent \
+    --namespace gitlab-agent \
+    --create-namespace \
+    --set image.tag=v15.1.0 \
+    --set config.token=x7HCeVjrBUoPH4358WLa8-73GV_hem_fzcyWWXkCLyWze_WBdQ \
+    --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
+sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
+  --namespace gitlab-agent \
+  --reuse-values \
+  --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
+
+kubectl logs -f -l=app=gitlab-agent -n gitlab-agent
+```
+
