@@ -2,9 +2,9 @@
 
 The setup is deployed on 3 virtual machines, but should run on real hardware as well.
 
-
 In this setup I use:
-- Docker 
+
+- Docker
 - Kubernetes
 - Kafka
 - GitLab CI
@@ -19,7 +19,8 @@ In this setup I use:
 
 ## Virtual machines configurations
 
-<u>Virtual machine 1 (Kubernetes master node):</u>
+Virtual machine 1 (Kubernetes master node):
+
 - Ubuntu 18.04 x64
 - 12Gb RAM
 - 100 Gb Storage
@@ -28,7 +29,8 @@ In this setup I use:
 - Network: NAT
 - IP: 192.168.217.155
 
-<u>Virtual machine 2 (Kubernetes worker node 1):</u>
+Virtual machine 2 (Kubernetes worker node 1):
+
 - Ubuntu 18.04 x64
 - 4Gb RAM
 - 100 Gb Storage
@@ -37,7 +39,8 @@ In this setup I use:
 - Network: NAT
 - IP: 192.168.217.156
 
-<u>Virtual machine 3 (Kubernetes worker node 2):</u>
+Virtual machine 3 (Kubernetes worker node 2):
+
 - Ubuntu 18.04 x64
 - 4Gb RAM
 - 100 Gb Storage
@@ -46,8 +49,18 @@ In this setup I use:
 - Network: NAT
 - IP: 192.168.217.157
 
+## Docker
+
+## Kubernetes
 
 ## Kafka
 
 To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
 
+## Test web service project in Rust/Hyper
+
+## Gitlab CI
+
+## Prometheus
+
+## Grafana
