@@ -246,4 +246,84 @@ cargo build --release
 
 ## Prometheus
 
+Edit configurations:
+```
+gedit ~/strimzi-kafka-operator/examples/metrics/kafka-metrics.yaml
+gedit ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml
+```
+
+Copy metrics
+
+```
+kubectl apply -f ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml -n kafka
+cd ~ && mkdir prometheus
+cd ~/prometheus
+```
+
+```
+curl -s https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/master/bundle.yaml > bundle.yaml
+gedit bundle.yaml
+```
+Now replace:
+```
+namespace: default -> namespace: monitoring
+```
+
+```
+kubectl create namespace monitoring
+kubectl apply -f bundle.yaml -n monitoring --force-conflicts=true --server-side
+kubectl get pods -n monitoring
+kubectl get svc -n monitoring
+cd ~/strimzi-kafka-operator/examples/metrics/prometheus-additional-properties
+kubectl create secret generic additional-scrape-configs --from-file=prometheus-additional.yaml -n monitoring
+kubectl apply -f prometheus-additional.yaml -n monitoring
+cd ~/strimzi-kafka-operator/examples/metrics/prometheus-install
+gedit strimzi-pod-monitor.yaml
+```
+Change:
+```
+myproject -> kafka
+```
+
+```
+kubectl apply -f strimzi-pod-monitor.yaml -n monitoring
+gedit prometheus.yaml
+```
+Change:
+```
+namespace: myproject -> namespace: monitoring
+```
+
+```
+kubectl apply -f prometheus-rules.yaml -n monitoring
+kubectl apply -f prometheus.yaml -n monitoring
+kubectl get pods -n monitoring
+```
+
 ## Grafana
+
+```
+cd ~/strimzi-kafka-operator/examples/metrics/grafana-install
+kubectl apply -f grafana.yaml -n monitoring
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
+```
+
+- Open http://localhost:3000 
+- Add Prometheus as a new Data Source.
+- Inside the Settings tap, you need to enter Prometheus address
+
+```
+kubectl get svc -n monitoring
+```
+
+Use addresses like:
+- http://prometheus-operated:9090
+- http://prometheus-operated.monitoring:9090 
+- http://prometheus-operator.monitoring.svc.cluster.local:9090
+
+Import these files through the Grafana webpage:
+- ~/strimzi-kafka-operator/examples/metrics/grafana-dashboards
+- strimzi-kafka.json
+- strimzi-kafka-exporter.json
+- strimzi-operators.json
+- strimzi-zookeeper.json
