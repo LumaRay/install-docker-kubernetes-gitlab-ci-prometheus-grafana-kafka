@@ -490,6 +490,7 @@ kubectl port-forward svc/grafana 3000:3000 -n monitoring
 ```
 
 - Open http://localhost:3000 
+- Login with Username/password: admin
 - Add Prometheus as a new Data Source.
 - Inside the Settings tap, you need to enter Prometheus address
 
@@ -510,6 +511,7 @@ Import these files through the Grafana webpage:
 - strimzi-zookeeper.json
 
 
+	
 ## Test web service project in Rust/Hyper
 
 ### Setting up Rust
