@@ -329,6 +329,10 @@ spec:
 
 ```
 kubectl apply -f kafka-external.yaml -n kafka
+```
+
+To test Kafka external either use Kafka package:
+```
 cd ~
 git clone -b 3.2.0 https://github.com/apache/kafka.git
 cd kafka
@@ -337,7 +341,7 @@ bin/kafka-console-producer.sh --broker-list 192.168.217.155:31318 --topic my-top
 bin/kafka-console-consumer.sh --bootstrap-server 192.168.217.155:31318 --topic my-topic --from-beginning
 ```
 
-Using Kafka Cat:
+Or use Kafka Cat:
 ```
 sudo apt install -y kafkacat
 echo "hello world!" | kafkacat -P -b 192.168.217.155:31318 -t my-topic
