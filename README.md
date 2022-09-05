@@ -618,7 +618,9 @@ sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
   --namespace gitlab-agent \
   --reuse-values \
   --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
-
+```
+To view GitLab logs:
+```
 kubectl logs -f -l=app=gitlab-agent -n gitlab-agent
 ```
 
