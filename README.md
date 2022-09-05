@@ -53,8 +53,16 @@ Virtual machine 3 (Kubernetes worker node 2):
 
 __Master & Workers__
 
+First of all, let's update system on every virtual machine:
 ```
 sudo apt-get update && sudo apt-get upgrade
+```
+Next read IP addresses of your virtual machines:
+```
+hostname -I | awk '{print $1}'
+```
+Then set hosts
+```
 sudo echo "192.168.217.155 kube-master" >> /etc/hosts
 sudo echo "192.168.217.156 kube-worker" >> /etc/hosts
 sudo echo "192.168.217.157 kube-worker2" >> /etc/hosts
