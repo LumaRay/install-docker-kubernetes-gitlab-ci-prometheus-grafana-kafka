@@ -22,7 +22,7 @@ In this setup I use:
 Virtual machine 1 (Kubernetes master node):
 
 - Ubuntu 18.04 x64
-- 12Gb RAM
+- 8Gb RAM
 - 100 Gb Storage
 - 4 cores
 - Intel-VT enabled
@@ -32,7 +32,7 @@ Virtual machine 1 (Kubernetes master node):
 Virtual machine 2 (Kubernetes worker node 1):
 
 - Ubuntu 18.04 x64
-- 4Gb RAM
+- 6Gb RAM
 - 100 Gb Storage
 - 4 cores
 - Intel-VT enabled
@@ -42,7 +42,7 @@ Virtual machine 2 (Kubernetes worker node 1):
 Virtual machine 3 (Kubernetes worker node 2):
 
 - Ubuntu 18.04 x64
-- 4Gb RAM
+- 6Gb RAM
 - 100 Gb Storage
 - 4 cores
 - Intel-VT enabled
