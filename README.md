@@ -92,12 +92,14 @@ hostnamectl set-hostname worker-node2
 
 ## Docker
 
-__Master__
+__Master & Workers__
 
 ### Setting up Docker
 ```
 sudo apt-get install -y docker.io
 ```
+
+__Master__
 
 ### Adding a proxy Docker registry on port 5000
 
@@ -117,9 +119,10 @@ sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -d -p 6000:5000 --rest
 
 __Master & Workers__
 ```
-sudo touch /etc/docker/daemon.json && sudo echo '{"registry-mirrors":["http://192.168.217.155:5000"],"insecure-registries":["192.168.217.155:5000","192.168.217.155:6000"]}' > /etc/docker/daemon.json
-sudo echo 'DOCKER_OPTS="--config-file=/etc/docker/daemon.json"' > /etc/default/docker
-sudo systemctl stop docker && sudo systemctl start docker
+sudo touch /etc/docker/daemon.json
+sudo bash -c 'echo "{\"registry-mirrors\":[\"http://192.168.217.155:5000\"],\"insecure-registries\":[\"192.168.217.155:5000\",\"192.168.217.155:6000\"]}" >> /etc/docker/daemon.json'
+sudo bash -c 'echo "DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\"" >> /etc/default/docker'
+sudo systemctl restart docker
 ```
 
 To see Docker status run:
