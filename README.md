@@ -97,6 +97,8 @@ __Master & Workers__
 ### Setting up Docker
 ```
 sudo apt-get install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
 __Master__
@@ -140,7 +142,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add
 cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
-sudo apt-get update && sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-get update && sudo apt-get install -y kubelet=1.24.3-00 kubeadm=1.24.3-00 kubectl=1.24.3-00
 ```
 
 __Master__
@@ -156,6 +158,18 @@ kubeadm token list
 kubeadm token create --print-join-command
 ```
 
+Now going on with the setup.
+
+```
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+You can start another terminal to watch for changes:
+```
+watch kubectl get pods --all-namespaces
+```
+
 __Workers__
 
 Run the worker node join command you saved before, but remember to add "sudo" in the beginning, it will look something like 
@@ -166,24 +180,17 @@ sudo kubeadm join kube-master:6443 --token __some_token__ \
 
 __Master__
 
-Now going on with the setup.
-
+### Install Calico Nodes
 ```
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
 curl -s https://docs.projectcalico.org/manifests/calico.yaml | \
 sed \
 -e 's|            # - name: CALICO_IPV4POOL_CIDR|            - name: CALICO_IPV4POOL_CIDR|g' \
--e "s|            #   value: \"192.168.0.0/16\"|              value: \"192.168.150.0/23\"|g"
+-e "s|            #   value: \"192.168.0.0/16\"|              value: \"192.168.150.0/23\"|g" \
+> calico.yaml
 kubectl apply -f calico.yaml
 kubectl get nodes
 ```
 
-Then you can start another terminal to watch for changes:
-```
-watch kubectl get pods --all-namespaces
-```
 
 
 ### Using Kubernetes dashboard
