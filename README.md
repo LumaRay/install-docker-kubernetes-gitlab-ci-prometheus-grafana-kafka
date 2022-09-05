@@ -130,15 +130,6 @@ To see Docker status run:
 sudo docker system info
 ```
 
-To list the catalog:
-```
-curl http://192.168.217.155:6000/v2/_catalog
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
-```
-
-
-
 ## Kubernetes
 
 __Master & Workers__
@@ -259,6 +250,13 @@ docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
 sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
 sudo docker push 192.168.217.155:6000/testrusthyper
 sudo docker pull 192.168.217.155:6000/testrusthyper
+```
+### Check the catalog:
+```
+sudo apt-get install curl
+curl http://192.168.217.155:6000/v2/_catalog
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
 ```
 
 
