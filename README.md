@@ -553,9 +553,14 @@ curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
 
 ## Gitlab CI
 
+Remove GitLab if already present:
+```
+sudo docker rm -f gitlab
+```
+
+Now install:
 ```
 export GITLAB_HOME=/srv/gitlab
-sudo docker rm -f gitlab
 sudo docker run --detach \
   --hostname 192.168.217.155 \
   --publish 443:443 --publish 80:80 --publish 22:22 \
