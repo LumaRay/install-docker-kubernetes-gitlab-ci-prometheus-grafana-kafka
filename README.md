@@ -428,8 +428,11 @@ Copy from kafka-metrics.yaml to kafka-ephemeral-2.yaml:
 * metrics from spec->kafka->metricsConfig
 * metrics from spec->zookeeper->metricsConfig
 * all starting with
----
+
+\-\-\-
+
 kind: ConfigMap
+	
 ...
 
 ```
