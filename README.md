@@ -418,13 +418,19 @@ kubectl logs -f strimzi-consumer-deployment-f86469b6-c9cbt
 
 ## Prometheus
 
-Edit configurations:
+Open configurations:
 ```
 gedit ~/strimzi-kafka-operator/examples/metrics/kafka-metrics.yaml
 gedit ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml
 ```
 
-Copy metrics
+Copy from kafka-metrics.yaml to kafka-ephemeral-2.yaml:
+* metrics from spec->kafka->metricsConfig
+* metrics from spec->zookeeper->metricsConfig
+* all starting with
+---
+kind: ConfigMap
+...
 
 ```
 kubectl apply -f ~/strimzi-kafka-operator/examples/kafka/kafka-ephemeral-2.yaml -n kafka
