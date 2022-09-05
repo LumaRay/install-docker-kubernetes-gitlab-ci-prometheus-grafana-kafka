@@ -232,6 +232,15 @@ Now restart ContainerD:
 sudo systemctl restart containerd
 ```
 
+### To Uninstall Kubernetes
+```
+sudo kubeadm reset
+rm -rf /etc/systemd/system/kubelnet.service.d
+rm -rf $HOME/.kube/config
+sudo apt-get remove --purge kubelet kubeadm kubectl
+```
+
+
 ## Test web service project in Rust/Hyper
 
 ### Setting up Rust
