@@ -570,12 +570,13 @@ sudo docker run -d --name gitlab-runner --restart always \
   
 sudo docker run --rm -it -v /srv/gitlab-runner/config:/etc/gitlab-runner gitlab/gitlab-runner register
 ```
-While installing set GitLab URL as http://192.168.217.155/
-Then paste the registration token of the instance runner
-Execution shell = docker
-Default Docker image = docker:dind
-```
+While installing:
+- GitLab URL = http://192.168.217.155/
+- paste the registration token of the instance runner
+- execution shell = docker
+- default Docker image = docker:dind
 	
+```
 sudo gedit /srv/gitlab-runner/config/config.toml
 ```
 Add:
