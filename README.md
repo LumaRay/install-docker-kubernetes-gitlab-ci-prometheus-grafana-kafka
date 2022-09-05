@@ -240,139 +240,7 @@ sudo apt-get remove --purge kubelet kubeadm kubectl
 ```
 
 
-## Test web service project in Rust/Hyper
-
-### Setting up Rust
-
-__Master__
-```
-sudo apt install -y build-essential
-sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-```
-
-Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
-
-```
-cd ~/test-rust-hyper
-cargo build --release
-```
-
-### Building Docker image
-```
-docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
-```
-
-### Tagging, pushing, pulling
-```
-sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
-sudo docker push 192.168.217.155:6000/testrusthyper
-sudo docker pull 192.168.217.155:6000/testrusthyper
-```
-### Check the catalog:
-```
-sudo apt-get install curl
-curl http://192.168.217.155:6000/v2/_catalog
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
-```
-
-
 ## Kafka
-
-To install Kafka I used a very informative article https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
-
-```
-sudo useradd kafka -m
-
-sudo passwd kafka
-```
-
-I use simple password for test: 123
-
-```
-sudo adduser kafka sudo
-su -l kafka
-mkdir ~/Downloads
-curl "https://dlcdn.apache.org/kafka/3.2.0/kafka-3.2.0-src.tgz" -o ~/Downloads/kafka.tgz
-mkdir ~/kafka && cd ~/kafka
-tar -xvzf ~/Downloads/kafka.tgz --strip 1
-gedit ~/kafka/config/server.properties
-```
-Set:
-```
-delete.topic.enable = true
-```
-
-```
-./gradlew jar -PscalaVersion=2.13.6
-sudo gedit /etc/systemd/system/zookeeper.service
-```
-
-```
-sudo gedit /etc/systemd/system/kafka.service
-```
-
-```
-bin/zookeeper-server-start.sh config/zookeeper.properties
-bin/kafka-server-start.sh config/server.properties
-```
-
-Test topics:
-```
-bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 192.168.217.155:30105
-```
-
-Test producers:
-```
-bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092
-bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server 192.168.217.155:30105
-echo "Hello, World" | ~/kafka/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events > /dev/null
-```
-
-Test consumers:
-```
-bin/kafka-console-consumer.sh --topic quickstart-events --from-beginning --bootstrap-server localhost:9092
-bin/kafka-console-consumer.sh --topic quickstart-events --bootstrap-server localhost:9092
-```
-
-To start Kafka:
-```
-sudo systemctl start kafka
-sudo journalctl -u kafka
-```
-
-Delete Kafka user:
-```
-sudo deluser kafka sudo
-sudo passwd kafka -l
-```
-
-
-### Kafka on Kubernetes
-
-Ref: https://learnk8s.io/kafka-ha-kubernetes
-Ref: https://strimzi.io/
-Ref: https://strimzi.io/quickstarts/
-
-```
-kubectl create namespace kafka
-kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
-curl https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.30.0/examples/kafka/kafka-ephemeral.yaml > kafka-ephemeral-2.yaml
-gedit ./kafka-ephemeral-2.yaml
-```
-Replace nodes count:
-- 2 > 1
-- 3 > 2
-
-```
-kubectl apply -f ./kafka-ephemeral-2.yaml -n kafka	
-kubectl -n kafka run kafka-producer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic
-kubectl -n kafka run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.30.0-kafka-3.2.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic my-topic --from-beginning
-```
-
-### Alternative Kafka install
 
 Ref: https://snourian.com/kafka-kubernetes-strimzi-part-1-creating-deploying-strimzi-kafka/
 Ref: https://github.com/nrsina/strimzi-kafka-tutorial
@@ -394,16 +262,19 @@ Replace:
 - 2 > 1
 - 3 > 2
 
-Set:
+Add in spec->kafka->config:
 ```
 auto.create.topics.enable: "true"
 delete.topic.enable: "true"
+```
+Add in spec->kafka->listeners:
+```
      - name: external
         port: 9094
         type: nodeport
         tls: false
 ```
-
+Then do:
 ```
 kubectl apply -f examples/kafka/kafka-ephemeral-2.yaml -n kafka
 kubectl get deployments -n kafka
@@ -529,6 +400,8 @@ kubectl apply -f deployment/deployment.yml
 kubectl logs -f strimzi-consumer-deployment-f86469b6-c9cbt
 ```
 
+
+
 ## Prometheus
 
 Edit configurations:
@@ -612,6 +485,44 @@ Import these files through the Grafana webpage:
 - strimzi-kafka-exporter.json
 - strimzi-operators.json
 - strimzi-zookeeper.json
+
+
+## Test web service project in Rust/Hyper
+
+### Setting up Rust
+
+__Master__
+```
+sudo apt install -y build-essential
+sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
+
+```
+cd ~/test-rust-hyper
+cargo build --release
+```
+
+### Building Docker image
+```
+docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+```
+
+### Tagging, pushing, pulling
+```
+sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
+sudo docker push 192.168.217.155:6000/testrusthyper
+sudo docker pull 192.168.217.155:6000/testrusthyper
+```
+### Check the catalog:
+```
+sudo apt-get install curl
+curl http://192.168.217.155:6000/v2/_catalog
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
+```
 
 
 ## Gitlab CI
