@@ -513,44 +513,6 @@ Import these files through the Grafana webpage (select Prometheus datasource whi
 
 
 	
-## Test web service project in Rust/Hyper
-
-### Setting up Rust
-
-__Master__
-```
-sudo apt install -y build-essential
-sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source "$HOME/.cargo/env"
-```
-
-Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
-
-```
-cd ~/test-rust-hyper
-cargo build --release
-```
-
-### Building Docker image
-```
-docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
-```
-
-### Tagging, pushing, pulling
-```
-sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
-sudo docker push 192.168.217.155:6000/testrusthyper
-sudo docker pull 192.168.217.155:6000/testrusthyper
-```
-### Check the catalog:
-```
-sudo apt-get install curl
-curl http://192.168.217.155:6000/v2/_catalog
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
-```
-
-
 ## Gitlab CI
 
 Remove GitLab if already present:
@@ -660,3 +622,39 @@ sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
 kubectl logs -f -l=app=gitlab-agent -n gitlab-agent
 ```
 
+## Test web service project in Rust/Hyper
+
+### Setting up Rust
+
+__Master__
+```
+sudo apt install -y build-essential
+sudo curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+```
+
+Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
+
+```
+cd ~/test-rust-hyper
+cargo build --release
+```
+
+### Building Docker image
+```
+docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+```
+
+### Tagging, pushing, pulling
+```
+sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
+sudo docker push 192.168.217.155:6000/testrusthyper
+sudo docker pull 192.168.217.155:6000/testrusthyper
+```
+### Check the catalog:
+```
+sudo apt-get install curl
+curl http://192.168.217.155:6000/v2/_catalog
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
+curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
+```
