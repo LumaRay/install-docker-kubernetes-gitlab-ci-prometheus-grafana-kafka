@@ -63,13 +63,14 @@ hostname -I | awk '{print $1}'
 ```
 Then set hosts
 ```
-sudo echo "192.168.217.155 kube-master" >> /etc/hosts
-sudo echo "192.168.217.156 kube-worker" >> /etc/hosts
-sudo echo "192.168.217.157 kube-worker2" >> /etc/hosts
-sudo /etc/init.d/networking restart
-sudo netplan apply
+sudo bash -c 'echo "192.168.217.155 kube-master" >> /etc/hosts'
+sudo bash -c 'echo "192.168.217.156 kube-worker" >> /etc/hosts'
+sudo bash -c 'echo "192.168.217.157 kube-worker2" >> /etc/hosts'
+```
+In order for Kubernetes to work we need to switch off swap:
+```
 sudo sed -i '/swapfile/d' /etc/fstab
-sudo echo "3" > /proc/sys/vm/drop_caches
+sudo bash -c 'echo "3" > /proc/sys/vm/drop_caches'
 sudo swapoff -a
 sudo rm -f /swapfile
 ```
