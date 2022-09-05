@@ -145,7 +145,7 @@ sudo apt-get update && sudo apt-get install -y kubelet kubeadm kubectl
 
 __Master__
 ```
-sudo kubeadm init --control-plane-endpoint kube-master:6443 --pod-network-cidr 192.168.150.0/23
+sudo kubeadm init --control-plane-endpoint kube-master:6443 --pod-network-cidr 192.168.150.0/23 --upload-certs
 ```
 
 At this step kubeadm will output a command to make worker nodes join the cluster starting *with sudo kubeadm join*. Save this command.
@@ -155,6 +155,16 @@ The join token will live for 24 hours, so when you need to generate another one,
 kubeadm token list
 kubeadm token create --print-join-command
 ```
+
+__Workers__
+
+Run the worker node join command you saved before, but remember to add "sudo" in the beginning, it will look something like 
+```
+sudo kubeadm join kube-master:6443 --token __some_token__ \
+	--discovery-token-ca-cert-hash sha256:__some_hash_code__
+```
+
+__Master__
 
 Now going on with the setup.
 
@@ -175,14 +185,6 @@ Then you can start another terminal to watch for changes:
 watch kubectl get pods --all-namespaces
 ```
 
-
-__Workers__
-
-Run the worker node join command you saved before, it will look something like 
-```
-sudo kubeadm join kube-master:6443 --token __some_token__ \
-	--discovery-token-ca-cert-hash sha256:__some_hash_code__
-```
 
 ### Using Kubernetes dashboard
 
