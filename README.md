@@ -207,7 +207,6 @@ Then open http://192.168.217.155:8001/api/v1/namespaces/kubernetes-dashboard/ser
 
 Latest versions of Kubernetes use ContainerD, so we need to configure insecure http image registries in it. 
 ```
-kubectl get nodes -o wide
 sudo mkdir /etc/containerd
 sudo gedit /etc/containerd/config.toml
 ```
