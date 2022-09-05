@@ -331,6 +331,16 @@ spec:
 kubectl apply -f kafka-external.yaml -n kafka
 ```
 
+To see the designated port, use:
+```
+kubectl get service --namespace kafka | grep external
+```
+You will get something like:
+```
+my-cluster-kafka-external-bootstrap   NodePort    10.106.223.28   <none>        9094:31318/TCP                        18m
+```
+So 31318 is the port you need.
+	
 To test Kafka external either use Kafka package:
 ```
 cd ~
