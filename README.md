@@ -579,18 +579,17 @@ While installing:
 ```
 sudo gedit /srv/gitlab-runner/config/config.toml
 ```
-Add:
+Add to [[runners]]:
 ```
 clone_url = "http://192.168.217.155/"
 ```
-to [[runners]]
-Then add:
+	
+Then add to [runners.docker]:
 ```
 hostname = "http://192.168.217.155/"
 privileged = true
 image = docker:dind
 ```
-to [runners.docker]
 
 Then do:
 ```
