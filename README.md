@@ -538,42 +538,60 @@ To view GitLab logs:
 ```
 sudo docker logs -f gitlab
 ```
+Export GitLab address:
+```
+export GITLAB_CI_SERVER_URL=http://192.168.217.155
+```
+
 Next get password:
 ```
 sudo docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
 ```
+
 
 Will get something like:
 ```
 root
 <password>
 ```
-
-```
-export GITLAB_CI_SERVER_URL=http://192.168.217.155
-```
-
+Open http://192.168.217.155:80 in browser, log in using root and <password>
+Then create a group Test Rust with url test-rust
+After that create Project Hyper 1 with url hyper-1
+	
+Add instance runner and copy its registration token
+	
 __Worker1__
 ```
+export GITLAB_CI_SERVER_URL=http://192.168.217.155
 sudo docker run -d --name gitlab-runner --restart always \
   -v /srv/gitlab-runner/config:/etc/gitlab-runner \
   -v /var/run/docker.sock:/var/run/docker.sock \
   gitlab/gitlab-runner:latest
   
 sudo docker run --rm -it -v /srv/gitlab-runner/config:/etc/gitlab-runner gitlab/gitlab-runner register
-
+```
+While installing set GitLab URL as http://192.168.217.155/
+Then paste the registration token of the instance runner
+Execution shell = docker
+Default Docker image = docker:dind
+```
+	
 sudo gedit /srv/gitlab-runner/config/config.toml
 ```
-Set:
+Add:
 ```
-[[runners]]
 clone_url = "http://192.168.217.155/"
-[runners.docker]
-hostname = "http://192.168.217.155/"
-image = docker:dind
-privileged = true
 ```
+to [[runners]]
+Then add:
+```
+hostname = "http://192.168.217.155/"
+privileged = true
+image = docker:dind
+```
+to [runners.docker]
 
+Then do:
 ```
 sudo docker restart gitlab-runner
 ```
