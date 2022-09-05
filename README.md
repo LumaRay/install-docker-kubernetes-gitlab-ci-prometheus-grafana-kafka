@@ -492,6 +492,7 @@ kubectl port-forward svc/grafana 3000:3000 -n monitoring
 - Open http://localhost:3000 
 - Login with Username/password: admin
 - Add Prometheus as a new Data Source.
+- Set URL as http://prometheus-operated:9090
 - Inside the Settings tap, you need to enter Prometheus address
 
 ```
