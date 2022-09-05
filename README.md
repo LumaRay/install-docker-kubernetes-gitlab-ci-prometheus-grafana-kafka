@@ -504,7 +504,7 @@ Use addresses like:
 - http://prometheus-operated.monitoring:9090 
 - http://prometheus-operator.monitoring.svc.cluster.local:9090
 
-Import these files through the Grafana webpage:
+Import these files through the Grafana webpage (select Prometheus datasource while importing):
 - ~/strimzi-kafka-operator/examples/metrics/grafana-dashboards
 - strimzi-kafka.json
 - strimzi-kafka-exporter.json
