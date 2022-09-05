@@ -77,17 +77,17 @@ sudo rm -f /swapfile
 
 __Master__
 ```
-hostnamectl set-hostname master-node
+hostnamectl set-hostname kube-master
 ```
 
 __Worker 1__
 ```
-hostnamectl set-hostname worker-node
+hostnamectl set-hostname kube-worker
 ```
 
 __Worker 2__
 ```
-hostnamectl set-hostname worker-node2
+hostnamectl set-hostname kube-worker2
 ```
 
 ## Docker
