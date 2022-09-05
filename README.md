@@ -358,7 +358,7 @@ echo "hello world!" | kafkacat -P -b 192.168.217.155:31318 -t my-topic
 kafkacat -C -b 192.168.217.155:31318 -t my-topic
 ```
 	
-### Setup Go Producer
+### Setup Strimzi Custom Producer / Consumer
 
 From https://snourian.com/kafka-kubernetes-strimzi-part-2-creating-producer-consumer-using-go-scala-deploying-on-kubernetes/
 
