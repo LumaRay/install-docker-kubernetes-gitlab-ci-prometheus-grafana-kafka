@@ -598,7 +598,20 @@ Then do:
 sudo docker restart gitlab-runner
 ```
 
-Open Settings->CI->Edit and add .gitlab-ci.yaml file (copy its contents from this repo).
+### Configuring CI pipeline
+
+First, set up a sample Rust project (see next section)
+	
+Then in GitLab open Settings->CI->Edit and add .gitlab-ci.yaml file (copy its contents from this repo).
+	
+The pipeline should automatically run and rerun every time the sample project repo is updated.
+	
+### Updating Kubernetes image
+	
+To update the sample project on Kubernetes, you need to run:
+```
+kubectl rollout restart deployment rust-hyper-depl
+```
 	
 	
 ## Test web service project in Rust/Hyper
@@ -648,4 +661,23 @@ git remote add origin http://192.168.217.155/test-rust/hyper-1.git
 git add .
 git commit -m "Initial commit"
 git push -u origin master
+```
+### Add Kubernetes deployment
+Copy rusthyper_kubedepl.yaml from this repo
+```
+kubectl apply -f ./rusthyper_kubedepl.yaml
+```
+To remove the deployment:
+```
+kubectl delete -f ./rusthyper_kubedepl.yaml
+```
+Different ways to run the project on Kubernetes:
+```
+kubectl run rust-hyper --image=testrusthyper:v1 --image-pull-policy=IfNotPresent
+kubectl run rust-hyper --image=192.168.217.155:5000/testrusthyper --image-pull-policy=IfNotPresent --port 30001
+```
+Check application logs:
+```
+kubectl describe pods rust-hyper
+kubectl logs kubectl logs rust-hyper-depl-787b6d9c97-fxhqm
 ```
