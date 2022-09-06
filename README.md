@@ -610,6 +610,7 @@ cd ~/test-rust-hyper
 ```
 Create git repo at: .gitlab/agents/testrusthyper-agent/config.yaml
 ```
+mkdir -p .gitlab/agents/testrusthyper-agent
 gedit .gitlab/agents/testrusthyper-agent/config.yaml
 ```
 Set:
