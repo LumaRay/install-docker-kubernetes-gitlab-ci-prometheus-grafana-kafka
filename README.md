@@ -604,7 +604,10 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scrip
 chmod 700 get_helm.sh
 ./get_helm.sh
 ```
-
+Go to project folder (see in the next section):
+```
+cd ~/test-rust-hyper
+```
 Create git repo at: .gitlab/agents/testrusthyper-agent/config.yaml
 ```
 gedit .gitlab/agents/testrusthyper-agent/config.yaml
