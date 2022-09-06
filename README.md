@@ -692,7 +692,9 @@ curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
 ```
 ### Initialize Git Repo
 ```
-git init --initial-branch=main
+git config --global user.name "Administrator"
+git config --global user.email "admin@example.com"
+git init
 git remote add origin http://192.168.217.155/test-rust/hyper-1.git
 git add .
 git commit -m "Initial commit"
