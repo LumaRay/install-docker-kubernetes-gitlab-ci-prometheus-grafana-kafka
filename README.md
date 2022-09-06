@@ -662,6 +662,7 @@ source "$HOME/.cargo/env"
 
 Then you need to get the Rust project from https://github.com/LumaRay/test-simple-web-server/tree/master/test-rust-hyper
 
+Don't forget .gitignore
 ```
 cd ~/test-rust-hyper
 cargo build --release
