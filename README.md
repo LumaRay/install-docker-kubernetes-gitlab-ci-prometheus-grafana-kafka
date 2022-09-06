@@ -598,7 +598,7 @@ Then do:
 sudo docker restart gitlab-runner
 ```
 
-### To install an agent using Helm:
+### To install an agent on Kubernates cluster using Helm:
 ```
 curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
 chmod 700 get_helm.sh
@@ -620,19 +620,9 @@ ci_access:
     - id: test-rust/hyper-1
 ```
 
-
-Connect a Kubernetes cluster
-Agent access token:
-
-<TOKEN>
-
-The agent uses the token to connect with GitLab.
-
-You cannot see this token again after you close this window.
+Open GitLab project settings->runners->expand
 	
-Install using Helm (recommended)
-
-From a terminal, connect to your cluster and run this command. The token is included in the command.
+Copy registration token: <TOKEN>
 
 ```
 sudo helm repo add gitlab https://charts.gitlab.io
