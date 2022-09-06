@@ -598,54 +598,6 @@ Then do:
 sudo docker restart gitlab-runner
 ```
 
-### To install an agent on Kubernates cluster using Helm:
-```
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
-```
-Go to project folder (see in the next section):
-```
-cd ~/test-rust-hyper
-```
-Create git repo at: .gitlab/agents/testrusthyper-agent/config.yaml
-```
-mkdir -p .gitlab/agents/testrusthyper-agent
-gedit .gitlab/agents/testrusthyper-agent/config.yaml
-```
-Set:
-```
-ci_access:
-  projects:
-    - id: test-rust/hyper-1
-```
-
-Open GitLab project settings->runners->expand
-	
-Copy registration token: <TOKEN>
-
-```
-sudo helm repo add gitlab https://charts.gitlab.io
-sudo helm repo update
-sudo helm upgrade --install testrusthyper-agent gitlab/gitlab-agent \
-    --namespace gitlab-agent \
-    --create-namespace \
-    --set image.tag=v15.1.0 \
-    --set config.token=<TOKEN> \
-    --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
-```
-To change the agent configuration:
-```
-sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
-  --namespace gitlab-agent \
-  --reuse-values \
-  --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
-```
-To view GitLab logs:
-```
-kubectl logs -f -l=app=gitlab-agent -n gitlab-agent
-```
-
 ## Test web service project in Rust/Hyper
 
 ### Setting up Rust
