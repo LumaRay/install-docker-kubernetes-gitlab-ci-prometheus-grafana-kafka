@@ -598,6 +598,9 @@ Then do:
 sudo docker restart gitlab-runner
 ```
 
+Open Settings->CI->Edit and add .gitlab-ci.yaml file (copy its contents from this repo).
+	
+	
 ## Test web service project in Rust/Hyper
 
 ### Setting up Rust
@@ -618,8 +621,9 @@ cargo build --release
 ```
 
 ### Building Docker image
+Copy test9.dockerfile to the application folder (copy its contents from this repo).
 ```
-sudo docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+sudo docker build --pull --rm -f "test9.dockerfile" -t testrusthyper:latest "."
 ```
 
 ### Tagging, pushing, pulling
