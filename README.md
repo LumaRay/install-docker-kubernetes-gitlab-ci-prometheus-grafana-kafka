@@ -555,7 +555,9 @@ root
 <password>
 ```
 Open http://192.168.217.155:80 in browser, log in using root and <password>
+	
 Then create a group Test Rust with url test-rust
+	
 After that create Project Hyper 1 with url hyper-1
 	
 Add instance runner and copy its registration token
@@ -623,6 +625,7 @@ Agent access token:
 The agent uses the token to connect with GitLab.
 
 You cannot see this token again after you close this window.
+	
 Install using Helm (recommended)
 
 From a terminal, connect to your cluster and run this command. The token is included in the command.
