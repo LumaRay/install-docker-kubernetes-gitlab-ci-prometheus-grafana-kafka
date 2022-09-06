@@ -643,6 +643,9 @@ sudo helm upgrade --install testrusthyper-agent gitlab/gitlab-agent \
     --set image.tag=v15.1.0 \
     --set config.token=<TOKEN> \
     --set config.kasAddress=ws://192.168.217.155/-/kubernetes-agent/
+```
+To change the agent configuration:
+```
 sudo helm upgrade testrusthyper-agent gitlab/gitlab-agent \
   --namespace gitlab-agent \
   --reuse-values \
@@ -698,5 +701,5 @@ git init
 git remote add origin http://192.168.217.155/test-rust/hyper-1.git
 git add .
 git commit -m "Initial commit"
-git push -u origin main
+git push -u origin master
 ```
