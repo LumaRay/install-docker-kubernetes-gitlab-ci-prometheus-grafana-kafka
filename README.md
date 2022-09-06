@@ -669,7 +669,7 @@ cargo build --release
 
 ### Building Docker image
 ```
-docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
+sudo docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest "."
 ```
 
 ### Tagging, pushing, pulling
