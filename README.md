@@ -685,3 +685,11 @@ curl http://192.168.217.155:6000/v2/_catalog
 curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
 curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
 ```
+### Initialize Git Repo
+```
+git init --initial-branch=main
+git remote add origin http://192.168.217.155/test-rust/hyper-1.git
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+```
