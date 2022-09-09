@@ -14,7 +14,7 @@ stages:
 prepare_deps_for_cargo:
    stage: build_binary
   #  image: jonoh/sccache-rust
-   image: 192.168.217.155:5000/clux/muslrust
+   image: kube-master:5000/clux/muslrust
    <<: *caching_rust
    before_script:
       #  -  cargo install sccache
@@ -41,11 +41,11 @@ prepare_deps_for_cargo:
 
 build_docker_image:
    stage: build_docker
-   image: 192.168.217.155:5000/library/docker:latest
+   image: kube-master:5000/library/docker:latest
    << : *caching_rust
    services:
-     - name: 192.168.217.155:5000/library/docker:dind
-       command: ["--tls=false", "--registry-mirror", "http://192.168.217.155:5000", "--insecure-registry", "http://192.168.217.155:5000", "--insecure-registry", "http://192.168.217.155:6000"]
+     - name: kube-master:5000/library/docker:dind
+       command: ["--tls=false", "--registry-mirror", "http://kube-master:5000", "--insecure-registry", "http://kube-master:5000", "--insecure-registry", "http://kube-master:6000"]
        alias: docker
       #  entrypoint: ["dockerd-entrypoint.sh", "--tls=false"]
       #  command: ["--tls=false"]
@@ -54,14 +54,14 @@ build_docker_image:
     #  - docker build -t registry.gitlab.com/astrolab-devops/material:0.2.1 .  
     #  - docker push registry.gitlab.com/astrolab-devops/material:0.2.1
     #  - export DOCKER_HOST=tcp://127.0.0.1:2375 && docker build --pull -t ${CI_REGISTRY_IMAGE} .
-    #  - echo '{"registry-mirrors":["http://192.168.217.155:5000"],"insecure-registries":["192.168.217.155:5000","192.168.217.155:6000"]}' > /etc/docker/daemon.json
+    #  - echo '{"registry-mirrors":["http://kube-master:5000"],"insecure-registries":["kube-master:5000","kube-master:6000"]}' > /etc/docker/daemon.json
     #  - systemctl stop docker && systemctl start docker
-     - docker pull 192.168.217.155:5000/clux/muslrust
+     - docker pull kube-master:5000/clux/muslrust
      - docker build --rm -f "test.dockerfile" -t testrusthyper:latest .  
-    #  - export DOCKER_HOST=http://192.168.217.155:5000 && docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest .  
-     - docker login 192.168.217.155:6000 --username=docker_test --password=docker_pass
-     - docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper:latest
-     - docker push 192.168.217.155:6000/testrusthyper:latest
+    #  - export DOCKER_HOST=http://kube-master:5000 && docker build --pull --rm -f "test.dockerfile" -t testrusthyper:latest .  
+     - docker login kube-master:6000 --username=docker_test --password=docker_pass
+     - docker tag testrusthyper:latest kube-master:6000/testrusthyper:latest
+     - docker push kube-master:6000/testrusthyper:latest
      - docker save --output="testrusthyper-latest.tar" testrusthyper:latest
    variables:
   #    DOCKER_DRIVER: overlay
@@ -86,6 +86,6 @@ build_docker_image:
 #     - echo ${KUBE_CONTEXT}
 #     - kubectl config get-contexts
 #     - kubectl config use-context test-rust/hyper-1:testrusthyper-agent
-#     - kubectl config set-cluster gitlab --server=http://192.168.217.155/-/kubernetes-agent/k8s-proxy/ --insecure-skip-tls-verify
+#     - kubectl config set-cluster gitlab --server=http://kube-master/-/kubernetes-agent/k8s-proxy/ --insecure-skip-tls-verify
 #     - cat ${KUBECONFIG}
 #     - kubectl get pods
