@@ -593,6 +593,7 @@ Then add to [runners.docker]:
 hostname = "http://kube-master/"
 privileged = true
 image = docker:dind
+extra_hosts = ["kube-master:192.168.217.155"]
 ```
 
 Then do:
