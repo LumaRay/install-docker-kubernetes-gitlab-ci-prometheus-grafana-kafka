@@ -122,7 +122,7 @@ sudo docker run -e REGISTRY_STORAGE_DELETE_ENABLED="true" -d -p 6000:5000 --rest
 __Master & Workers__
 ```
 sudo touch /etc/docker/daemon.json
-sudo bash -c 'echo "{\"registry-mirrors\":[\"http://192.168.217.155:5000\"],\"insecure-registries\":[\"192.168.217.155:5000\",\"192.168.217.155:6000\"]}" >> /etc/docker/daemon.json'
+sudo bash -c 'echo "{\"registry-mirrors\":[\"http://kube-master:5000\"],\"insecure-registries\":[\"kube-master:5000\",\"kube-master:6000\"]}" >> /etc/docker/daemon.json'
 sudo bash -c 'echo "DOCKER_OPTS=\"--config-file=/etc/docker/daemon.json\"" >> /etc/default/docker'
 sudo systemctl restart docker
 ```
@@ -198,12 +198,14 @@ kubectl get nodes
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.6.0/aio/deploy/recommended.yaml
-kubectl proxy --address="192.168.217.155" -p 8001 --accept-hosts='^*$'
+kubectl proxy --address="kube-master" -p 8001 --accept-hosts='^*$'
 ```
 
-Then open http://192.168.217.155:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/ in a browser
+Then open http://kube-master:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/ in a browser
 
 ### Configuring ContainerD
+
+__Master & Workers__
 
 Latest versions of Kubernetes use ContainerD, so we need to configure insecure http image registries in it. 
 ```
@@ -215,14 +217,14 @@ Now set the registries' urls and save:
 ```
 [plugins.cri.registry]
   [plugins.cri.registry.mirrors]
-    [plugins.cri.registry.mirrors."192.168.217.155:5000"]
-      endpoint = ["http://192.168.217.155:5000"]
-    [plugins.cri.registry.mirrors."192.168.217.155:6000"]
-      endpoint = ["http://192.168.217.155:6000"]
+    [plugins.cri.registry.mirrors."kube-master:5000"]
+      endpoint = ["http://kube-master:5000"]
+    [plugins.cri.registry.mirrors."kube-master:6000"]
+      endpoint = ["http://kube-master:6000"]
   [plugins.cri.registry.configs]
-    [plugins.cri.registry.configs."192.168.217.155:5000".tls]
+    [plugins.cri.registry.configs."kube-master:5000".tls]
       insecure_skip_verify = true
-    [plugins.cri.registry.configs."192.168.217.155:6000".tls]
+    [plugins.cri.registry.configs."kube-master:6000".tls]
       insecure_skip_verify = true
 ```
 	
@@ -347,15 +349,15 @@ cd ~
 git clone -b 3.2.0 https://github.com/apache/kafka.git
 cd kafka
 ./gradlew jar -PscalaVersion=2.13.6
-bin/kafka-console-producer.sh --broker-list 192.168.217.155:31318 --topic my-topic
-bin/kafka-console-consumer.sh --bootstrap-server 192.168.217.155:31318 --topic my-topic --from-beginning
+bin/kafka-console-producer.sh --broker-list kube-master:31318 --topic my-topic
+bin/kafka-console-consumer.sh --bootstrap-server kube-master:31318 --topic my-topic --from-beginning
 ```
 
 Or use Kafka Cat:
 ```
 sudo apt install -y kafkacat
-echo "hello world!" | kafkacat -P -b 192.168.217.155:31318 -t my-topic
-kafkacat -C -b 192.168.217.155:31318 -t my-topic
+echo "hello world!" | kafkacat -P -b kube-master:31318 -t my-topic
+kafkacat -C -b kube-master:31318 -t my-topic
 ```
 	
 ### Setup Strimzi Custom Producer / Consumer
@@ -370,15 +372,15 @@ cd strimzi-kafka-tutorial/strimzi-producer
 
 sudo docker build -t nrsina/strimzi-producer:v1 .
 
-sudo docker tag nrsina/strimzi-producer:v1 192.168.217.155:6000/strimzi-producer:v1
-sudo docker push 192.168.217.155:6000/strimzi-producer:v1
+sudo docker tag nrsina/strimzi-producer:v1 kube-master:6000/strimzi-producer:v1
+sudo docker push kube-master:6000/strimzi-producer:v1
 
 gedit deployment/deployment.yml
 ```
 
 Set:
 ```
-image: 192.168.217.155:6000/strimzi-producer:v1
+image: kube-master:6000/strimzi-producer:v1
 imagePullPolicy: IfNotPresent
         - name: SP_SLEEP_TIME_MS
           value: "2000ms"
@@ -395,8 +397,8 @@ cd strimzi-kafka-tutorial/strimzi-consumer
 sudo chmod 666 /var/run/docker.sock
 sbt docker:publishLocal
 
-sudo docker tag nrsina/strimzi-consumer:v1 192.168.217.155:6000/strimzi-consumer:v1
-sudo docker push 192.168.217.155:6000/strimzi-consumer:v1
+sudo docker tag nrsina/strimzi-consumer:v1 kube-master:6000/strimzi-consumer:v1
+sudo docker push kube-master:6000/strimzi-consumer:v1
 
 gedit deployment/deployment.yml
 ```
@@ -404,7 +406,7 @@ gedit deployment/deployment.yml
 Set:
 ```
 replicas: 2
-image: 192.168.217.155:6000/strimzi-consumer:v1
+image: kube-master:6000/strimzi-consumer:v1
 imagePullPolicy: IfNotPresent
 ```
 
@@ -524,7 +526,7 @@ Now install:
 ```
 export GITLAB_HOME=/srv/gitlab
 sudo docker run --detach \
-  --hostname 192.168.217.155 \
+  --hostname kube-master \
   --publish 443:443 --publish 80:80 --publish 22:22 \
   --name gitlab \
   --restart always \
@@ -540,7 +542,7 @@ sudo docker logs -f gitlab
 ```
 Export GitLab address:
 ```
-export GITLAB_CI_SERVER_URL=http://192.168.217.155
+export GITLAB_CI_SERVER_URL=http://kube-master
 ```
 
 Next get password:
@@ -564,7 +566,7 @@ Add instance runner and copy its registration token
 	
 __Worker1__
 ```
-export GITLAB_CI_SERVER_URL=http://192.168.217.155
+export GITLAB_CI_SERVER_URL=http://kube-master
 sudo docker run -d --name gitlab-runner --restart always \
   -v /srv/gitlab-runner/config:/etc/gitlab-runner \
   -v /var/run/docker.sock:/var/run/docker.sock \
@@ -583,12 +585,12 @@ sudo gedit /srv/gitlab-runner/config/config.toml
 ```
 Add to [[runners]]:
 ```
-clone_url = "http://192.168.217.155/"
+clone_url = "http://kube-master/"
 ```
 	
 Then add to [runners.docker]:
 ```
-hostname = "http://192.168.217.155/"
+hostname = "http://kube-master/"
 privileged = true
 image = docker:dind
 ```
@@ -641,23 +643,23 @@ sudo docker build --pull --rm -f "test9.dockerfile" -t testrusthyper:latest "."
 
 ### Tagging, pushing, pulling
 ```
-sudo docker tag testrusthyper:latest 192.168.217.155:6000/testrusthyper
-sudo docker push 192.168.217.155:6000/testrusthyper
-sudo docker pull 192.168.217.155:6000/testrusthyper
+sudo docker tag testrusthyper:latest kube-master:6000/testrusthyper
+sudo docker push kube-master:6000/testrusthyper
+sudo docker pull kube-master:6000/testrusthyper
 ```
 ### Check the catalog:
 ```
 sudo apt-get install curl
-curl http://192.168.217.155:6000/v2/_catalog
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/tags/list
-curl -X GET 192.168.217.155:6000/v2/testrusthyper/manifests/latest
+curl http://kube-master:6000/v2/_catalog
+curl -X GET kube-master:6000/v2/testrusthyper/tags/list
+curl -X GET kube-master:6000/v2/testrusthyper/manifests/latest
 ```
 ### Initialize Git Repo
 ```
 git config --global user.name "Administrator"
 git config --global user.email "admin@example.com"
 git init
-git remote add origin http://192.168.217.155/test-rust/hyper-1.git
+git remote add origin http://kube-master/test-rust/hyper-1.git
 git add .
 git commit -m "Initial commit"
 git push -u origin master
@@ -674,7 +676,7 @@ kubectl delete -f ./rusthyper_kubedepl.yaml
 Different ways to run the project on Kubernetes:
 ```
 kubectl run rust-hyper --image=testrusthyper:v1 --image-pull-policy=IfNotPresent
-kubectl run rust-hyper --image=192.168.217.155:5000/testrusthyper --image-pull-policy=IfNotPresent --port 30001
+kubectl run rust-hyper --image=kube-master:5000/testrusthyper --image-pull-policy=IfNotPresent --port 30001
 ```
 Check application logs:
 ```
