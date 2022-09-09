@@ -556,7 +556,7 @@ Will get something like:
 root
 <password>
 ```
-Open http://192.168.217.155:80 in browser, log in using root and <password>
+Open http://kube-master:80 in browser, log in using root and <password>
 	
 Then create a group Test Rust with url test-rust
 	
