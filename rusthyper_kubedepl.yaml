@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: rust-hyper-site
-        image: 192.168.217.155:6000/testrusthyper
+        image: kube-master:6000/testrusthyper
         # imagePullPolicy: IfNotPresent
         imagePullPolicy: Always
       imagePullSecrets:
